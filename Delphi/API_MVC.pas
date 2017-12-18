@@ -2,6 +2,9 @@ unit API_MVC;
 
 interface
 
+uses
+  System.Generics.Collections;
+
 type
   TModelAbstract = class abstract
   end;
@@ -14,10 +17,12 @@ type
 {$M+}
   TControllerAbstract = class abstract
   protected
+    FDataObj: TObjectDictionary<string, TObject>;
     procedure PerfomMessage(aMsg: string); virtual;
   public
     procedure ProcessMessage(aMsg: string);
     constructor Create; virtual;
+    destructor Destroy; override;
   end;
 {$M-}
 
@@ -26,6 +31,13 @@ type
   TProc = procedure of object;
 
 implementation
+
+destructor TControllerAbstract.Destroy;
+begin
+  FDataObj.Free;
+
+  inherited;
+end;
 
 procedure TControllerAbstract.PerfomMessage(aMsg: string);
 begin
@@ -46,6 +58,7 @@ end;
 
 constructor TControllerAbstract.Create;
 begin
+  FDataObj := TObjectDictionary<string, TObject>.Create([]);
 end;
 
 end.

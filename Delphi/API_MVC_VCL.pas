@@ -32,6 +32,8 @@ implementation
 
 destructor TViewVCLBase.Destroy;
 begin
+  SendMessage(Self.Name + 'Closed');
+
   if FIsMainView then
     FController.Free;
 
