@@ -42,13 +42,15 @@ type
     function GetPropNameByFieldName(aFieldName: string): string;
     function GetSelectSQLString: string; virtual;
     procedure AssignInstance;
-    procedure ReadInstance(aPKeyValueArr: TArray<Variant>);
     procedure FillParam(aParam: TFDParam; aValue: Variant);
+    procedure ReadInstance(aPKeyValueArr: TArray<Variant>);
+    procedure UpdateToDB;
   public
     class function GetStructure: TSructure; virtual; abstract;
     class function GetTableName: string;
     class procedure AddKey(var aKeyArr: TArray<TKeyField>; aFieldName: string;
       aFieldType: TFieldType);
+    procedure Store;
     constructor Create(aDBEngine: TDBEngine; aInstanceArr: TArray<TInstance>); overload;
     constructor Create(aDBEngine: TDBEngine; aPKeyValueArr: TArray<Variant>); overload;
   end;
@@ -81,6 +83,22 @@ implementation
 uses
   System.TypInfo,
   System.SysUtils;
+
+procedure TEntityAbstract.UpdateToDB;
+begin
+
+end;
+
+procedure TEntityAbstract.Store;
+begin
+  if FIsNewInstance then
+    begin
+      //InsertToDB;
+      FIsNewInstance := False;
+    end
+  else
+    UpdateToDB;
+end;
 
 constructor TEntityAbstract.Create(aDBEngine: TDBEngine; aInstanceArr: TArray<TInstance>);
 begin
