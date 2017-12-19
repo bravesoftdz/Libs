@@ -161,8 +161,15 @@ begin
 end;
 
 constructor TEntityFeatID.Create(aDBEngine: TDBEngine; aID: Integer);
+var
+  ValArr: TArray<Variant>;
 begin
-  inherited Create(aDBEngine, [aID]);
+  if aID = 0 then
+    ValArr := []
+  else
+    ValArr := [aID];
+
+  inherited Create(aDBEngine, ValArr);
 end;
 
 function TEntityAbstract.GetPropNameByFieldName(aFieldName: string): string;

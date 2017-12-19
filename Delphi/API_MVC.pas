@@ -14,6 +14,9 @@ type
     procedure SendMessage(aMsg: string);
   end;
 
+  TProc = procedure of object;
+  TViewMessageProc = procedure(aMsg: string) of object;
+
 {$M+}
   TControllerAbstract = class abstract
   protected
@@ -27,8 +30,6 @@ type
 {$M-}
 
   TControllerClass = class of TControllerAbstract;
-
-  TProc = procedure of object;
 
 implementation
 

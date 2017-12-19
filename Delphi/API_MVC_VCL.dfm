@@ -11,7 +11,7 @@ object ViewVCLBase: TViewVCLBase
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
-  Position = poOwnerFormCenter
+  Position = poDesktopCenter
   PixelsPerInch = 96
   TextHeight = 13
 end
