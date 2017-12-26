@@ -25,7 +25,9 @@ type
     FConnectParams: TConnectParams;
     procedure SetConnectParams; virtual;
   public
+    function GetLastInsertedID: Integer; virtual; abstract;
     procedure CloseConnection;
+    procedure ExecQuery(aQuery: TFDQuery); virtual;
     procedure OpenConnection;
     procedure OpenQuery(aQuery: TFDQuery; aIsFetchAll: Boolean = True);
     destructor Destroy; override;
@@ -35,6 +37,12 @@ type
   TDBEngineClass = class of TDBEngine;
 
 implementation
+
+procedure TDBEngine.ExecQuery(aQuery: TFDQuery);
+begin
+  aQuery.Connection := FDConnection;
+  aQuery.ExecSQL;
+end;
 
 procedure TDBEngine.OpenQuery(aQuery: TFDQuery; aIsFetchAll: Boolean = True);
 begin

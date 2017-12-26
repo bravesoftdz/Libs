@@ -6,7 +6,8 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
   API_MVC,
-  API_MVC_DB;
+  API_MVC_DB,
+  FireDAC.VCLUI.Wait;
 
 type
   TViewVCLBase = class(TForm, IViewAbstract)

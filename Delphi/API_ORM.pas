@@ -38,12 +38,19 @@ type
     FDBEngine: TDBEngine;
     FInstanceArr: TArray<TInstance>;
     FIsNewInstance: Boolean;
+    function GetInsertSQLString: string;
+    function GetInstanceFieldType(aFieldName: string): TFieldType;
+    function GetEmptySelectSQLString: string;
     function GetPrimKeyFieldType(aFieldName: string): TFieldType;
+    function GetProp(aPropName: string): Variant;
     function GetPropNameByFieldName(aFieldName: string): string;
     function GetSelectSQLString: string; virtual;
-    procedure AssignInstance;
+    procedure AssignFromInstance;
+    procedure AssignToInstance;
     procedure FillParam(aParam: TFDParam; aValue: Variant);
+    procedure InsertToDB; virtual;
     procedure ReadInstance(aPKeyValueArr: TArray<Variant>);
+    procedure SetProp(aPropName: string; aValue: Variant);
     procedure UpdateToDB;
   public
     class function GetStructure: TSructure; virtual; abstract;
@@ -53,6 +60,7 @@ type
     procedure Store;
     constructor Create(aDBEngine: TDBEngine; aInstanceArr: TArray<TInstance>); overload;
     constructor Create(aDBEngine: TDBEngine; aPKeyValueArr: TArray<Variant>); overload;
+    property Prop[aPropName: string]: Variant read GetProp write SetProp;
   end;
 {$M-}
 
@@ -62,6 +70,7 @@ type
   private
     FID: Integer;
     function GetSelectSQLString: string; override;
+    procedure InsertToDB; override;
   public
     constructor Create(aDBEngine: TDBEngine; aID: Integer);
   published
@@ -81,8 +90,127 @@ type
 implementation
 
 uses
+  System.Math,
   System.TypInfo,
-  System.SysUtils;
+  System.SysUtils,
+  System.Variants;
+
+function TEntityAbstract.GetInstanceFieldType(aFieldName: string): TFieldType;
+var
+  Instance: TInstance;
+begin
+  Result := ftUnknown;
+
+  for Instance in FInstanceArr do
+    if Instance.FieldName = aFieldName then
+      Exit(Instance.FieldType);
+end;
+
+procedure TEntityFeatID.InsertToDB;
+var
+  i: Integer;
+  LastInsertedID: Integer;
+begin
+  inherited;
+
+  LastInsertedID := FDBEngine.GetLastInsertedID;
+
+  for i := 0 to Length(FInstanceArr) - 1 do
+    if FInstanceArr[i].FieldName = 'Id' then
+      begin
+        FInstanceArr[i].Value := LastInsertedID;
+        Break;
+      end;
+
+  Prop['ID'] := LastInsertedID;
+end;
+
+procedure TEntityAbstract.AssignToInstance;
+var
+  i: Integer;
+  PropInfo: PPropInfo;
+  PropName: string;
+begin
+  for i := 0 to Length(FInstanceArr) - 1 do
+    begin
+      PropName := GetPropNameByFieldName(FInstanceArr[i].FieldName);
+      PropInfo := GetPropInfo(Self, PropName);
+
+      if PropInfo <> nil then
+        FInstanceArr[i].Value := Prop[PropName];
+    end;
+end;
+
+procedure TEntityAbstract.SetProp(aPropName: string; aValue: Variant);
+begin
+  SetPropValue(Self, aPropName, aValue);
+end;
+
+function TEntityAbstract.GetProp(aPropName: string): Variant;
+begin
+  Result := GetPropValue(Self, aPropName);
+end;
+
+function TEntityAbstract.GetInsertSQLString: string;
+var
+  FieldsPart: string;
+  i: Integer;
+  Instance: TInstance;
+  ValuesPart: string;
+begin
+  i := 0;
+  FieldsPart := '';
+  ValuesPart := '';
+  for Instance in FInstanceArr do
+    begin
+      if Instance.FieldType <> ftAutoInc then
+        begin
+          if i > 0 then
+            begin
+              FieldsPart := FieldsPart + ', ';
+              ValuesPart := ValuesPart + ', ';
+            end;
+          FieldsPart := FieldsPart + Instance.FieldName;
+          ValuesPart := ValuesPart + ':' + Instance.FieldName;
+          Inc(i);
+        end;
+    end;
+
+  Result := Format('insert into %s (%s) values (%s)', [GetTableName, FieldsPart, ValuesPart]);
+end;
+
+function TEntityAbstract.GetEmptySelectSQLString: string;
+begin
+  Result := Format('select * from %s where 1 = 2', [GetTableName]);
+end;
+
+procedure TEntityAbstract.InsertToDB;
+var
+  dsQuery: TFDQuery;
+  i: Integer;
+  PropName: string;
+  SQL: string;
+begin
+  ReadInstance([]);
+
+  SQL := GetInsertSQLString;
+
+  dsQuery := TFDQuery.Create(nil);
+  try
+    dsQuery.SQL.Text := SQL;
+
+    for i := 0 to dsQuery.Params.Count - 1 do
+      begin
+        PropName := GetPropNameByFieldName(dsQuery.Params[i].Name);
+        FillParam(dsQuery.Params[i], Prop[PropName]);
+      end;
+
+    FDBEngine.ExecQuery(dsQuery);
+    AssignToInstance;
+  finally
+    dsQuery.Free;
+  end;
+end;
 
 procedure TEntityAbstract.UpdateToDB;
 begin
@@ -93,7 +221,7 @@ procedure TEntityAbstract.Store;
 begin
   if FIsNewInstance then
     begin
-      //InsertToDB;
+      InsertToDB;
       FIsNewInstance := False;
     end
   else
@@ -106,7 +234,7 @@ begin
   FIsNewInstance := False;
 
   FInstanceArr := aInstanceArr;
-  AssignInstance;
+  AssignFromInstance;
 end;
 
 class function TORMEngine.GetInstanceArr(aQuery: TFDQuery): TArray<TInstance>;
@@ -114,6 +242,8 @@ var
   i: Integer;
   Instance: TInstance;
 begin
+  Result := [];
+
   for i := 0 to aQuery.Fields.Count - 1 do
     begin
       Instance.FieldName := aQuery.Fields[i].FullName;
@@ -124,7 +254,7 @@ begin
     end;
 end;
 
-procedure TEntityAbstract.AssignInstance;
+procedure TEntityAbstract.AssignFromInstance;
 var
   Instance: TInstance;
   PropInfo: PPropInfo;
@@ -210,7 +340,10 @@ procedure TEntityAbstract.FillParam(aParam: TFDParam; aValue: Variant);
 var
   FieldType: TFieldType;
 begin
-  FieldType := GetPrimKeyFieldType(aParam.Name);
+  if Length(FInstanceArr) > 0 then
+    FieldType := GetInstanceFieldType(aParam.Name)
+  else
+    FieldType := GetPrimKeyFieldType(aParam.Name);
 
   case FieldType of
     ftFloat: aParam.AsFloat := aValue;
@@ -261,7 +394,10 @@ var
   i: Integer;
   SQL: string;
 begin
-  SQL := GetSelectSQLString;
+  if Length(aPKeyValueArr) = 0 then
+    SQL := GetEmptySelectSQLString
+  else
+    SQL := GetSelectSQLString;
 
   dsQuery := TFDQuery.Create(nil);
   try
@@ -286,7 +422,7 @@ begin
   if not FIsNewInstance then
     begin
       ReadInstance(aPKeyValueArr);
-      AssignInstance;
+      AssignFromInstance;
     end;
 end;
 
