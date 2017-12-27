@@ -38,25 +38,32 @@ type
     FDBEngine: TDBEngine;
     FInstanceArr: TArray<TInstance>;
     FIsNewInstance: Boolean;
+    function GetDeleteSQLString: string;
     function GetInsertSQLString: string;
     function GetInstanceFieldType(aFieldName: string): TFieldType;
     function GetEmptySelectSQLString: string;
     function GetPrimKeyFieldType(aFieldName: string): TFieldType;
     function GetProp(aPropName: string): Variant;
     function GetPropNameByFieldName(aFieldName: string): string;
-    function GetSelectSQLString: string; virtual;
-    procedure AssignFromInstance;
-    procedure AssignToInstance;
+    function GetSelectSQLString: string;
+    function GetUpdateSQLString: string;
+    function GetWherePart: string; virtual;
+    procedure AssignInstanceFromProps;
+    procedure AssignPropsFromInstance;
+    procedure ExecToDB(aSQL: string);
     procedure FillParam(aParam: TFDParam; aValue: Variant);
     procedure InsertToDB; virtual;
     procedure ReadInstance(aPKeyValueArr: TArray<Variant>);
     procedure SetProp(aPropName: string; aValue: Variant);
     procedure UpdateToDB;
+  protected
+    function CheckPropExist(aFieldName: string; out aPropName: string): Boolean;
   public
     class function GetStructure: TSructure; virtual; abstract;
     class function GetTableName: string;
     class procedure AddKey(var aKeyArr: TArray<TKeyField>; aFieldName: string;
       aFieldType: TFieldType);
+    procedure Delete;
     procedure Store;
     constructor Create(aDBEngine: TDBEngine; aInstanceArr: TArray<TInstance>); overload;
     constructor Create(aDBEngine: TDBEngine; aPKeyValueArr: TArray<Variant>); overload;
@@ -69,7 +76,7 @@ type
   TEntityFeatID = class abstract(TEntityAbstract)
   private
     FID: Integer;
-    function GetSelectSQLString: string; override;
+    function GetWherePart: string; override;
     procedure InsertToDB; override;
   public
     constructor Create(aDBEngine: TDBEngine; aID: Integer);
@@ -90,10 +97,100 @@ type
 implementation
 
 uses
-  System.Math,
   System.TypInfo,
-  System.SysUtils,
-  System.Variants;
+  System.SysUtils;
+
+function TEntityAbstract.GetDeleteSQLString: string;
+begin
+  Result := Format('delete from %s where %s', [GetTableName, GetWherePart]);
+end;
+
+procedure TEntityAbstract.Delete;
+var
+  SQL: string;
+begin
+  SQL := GetDeleteSQLString;
+  ExecToDB(SQL);
+end;
+
+procedure TEntityAbstract.ExecToDB(aSQL: string);
+var
+  dsQuery: TFDQuery;
+  i: Integer;
+  PropName: string;
+begin
+  dsQuery := TFDQuery.Create(nil);
+  try
+    dsQuery.SQL.Text := aSQL;
+
+    for i := 0 to dsQuery.Params.Count - 1 do
+      begin
+        PropName := GetPropNameByFieldName(dsQuery.Params[i].Name);
+        FillParam(dsQuery.Params[i], Prop[PropName]);
+      end;
+
+    FDBEngine.ExecQuery(dsQuery);
+  finally
+    dsQuery.Free;
+  end;
+end;
+
+function TEntityAbstract.GetWherePart: string;
+var
+  i: Integer;
+  KeyField: TKeyField;
+begin
+  i := 0;
+  Result := '';
+  for KeyField in GetStructure.PrimaryKeyArr do
+    begin
+      if i > 0 then
+        Result := Result + ' and ';
+      Result := Result + Format('%s = :%s', [KeyField.FieldName, KeyField.FieldName]);
+      Inc(i);
+    end;
+end;
+
+function TEntityAbstract.CheckPropExist(aFieldName: string; out aPropName: string): Boolean;
+var
+  PropInfo: PPropInfo;
+begin
+  aPropName := GetPropNameByFieldName(aFieldName);
+  PropInfo := GetPropInfo(Self, aPropName);
+
+  if PropInfo <> nil then
+    Result := True
+  else
+    Result := False;
+end;
+
+function TEntityAbstract.GetUpdateSQLString: string;
+var
+  i: Integer;
+  Instance: TInstance;
+  PropName: string;
+  SetPart: string;
+begin
+  i := 0;
+  SetPart := '';
+  for Instance in FInstanceArr do
+    begin
+      if CheckPropExist(Instance.FieldName, PropName) and
+         (Instance.Value <> Prop[PropName])
+      then
+        begin
+          if i > 0 then
+            SetPart := SetPart + ', ';
+          SetPart := SetPart + Format('%s = :%s', [Instance.FieldName, Instance.FieldName]);
+          Inc(i);
+        end;
+    end;
+
+  if i = 0 then
+    Result := ''
+  else
+    Result := Format('update %s set %s where %s', [GetTableName, SetPart, GetWherePart]);
+end;
 
 function TEntityAbstract.GetInstanceFieldType(aFieldName: string): TFieldType;
 var
@@ -125,18 +222,16 @@ begin
   Prop['ID'] := LastInsertedID;
 end;
 
-procedure TEntityAbstract.AssignToInstance;
+procedure TEntityAbstract.AssignInstanceFromProps;
 var
   i: Integer;
-  PropInfo: PPropInfo;
   PropName: string;
 begin
   for i := 0 to Length(FInstanceArr) - 1 do
     begin
-      PropName := GetPropNameByFieldName(FInstanceArr[i].FieldName);
-      PropInfo := GetPropInfo(Self, PropName);
-
-      if PropInfo <> nil then
+      if CheckPropExist(FInstanceArr[i].FieldName, PropName) and
+         (FInstanceArr[i].Value <> Prop[PropName])
+      then
         FInstanceArr[i].Value := Prop[PropName];
     end;
 end;
@@ -186,35 +281,23 @@ end;
 
 procedure TEntityAbstract.InsertToDB;
 var
-  dsQuery: TFDQuery;
-  i: Integer;
-  PropName: string;
   SQL: string;
 begin
   ReadInstance([]);
-
   SQL := GetInsertSQLString;
-
-  dsQuery := TFDQuery.Create(nil);
-  try
-    dsQuery.SQL.Text := SQL;
-
-    for i := 0 to dsQuery.Params.Count - 1 do
-      begin
-        PropName := GetPropNameByFieldName(dsQuery.Params[i].Name);
-        FillParam(dsQuery.Params[i], Prop[PropName]);
-      end;
-
-    FDBEngine.ExecQuery(dsQuery);
-    AssignToInstance;
-  finally
-    dsQuery.Free;
-  end;
+  ExecToDB(SQL);
+  AssignInstanceFromProps;
 end;
 
 procedure TEntityAbstract.UpdateToDB;
+var
+  SQL: string;
 begin
+  SQL := GetUpdateSQLString;
+  if SQL.IsEmpty then Exit;
 
+  ExecToDB(SQL);
+  AssignInstanceFromProps;
 end;
 
 procedure TEntityAbstract.Store;
@@ -234,7 +317,7 @@ begin
   FIsNewInstance := False;
 
   FInstanceArr := aInstanceArr;
-  AssignFromInstance;
+  AssignPropsFromInstance;
 end;
 
 class function TORMEngine.GetInstanceArr(aQuery: TFDQuery): TArray<TInstance>;
@@ -254,19 +337,15 @@ begin
     end;
 end;
 
-procedure TEntityAbstract.AssignFromInstance;
+procedure TEntityAbstract.AssignPropsFromInstance;
 var
   Instance: TInstance;
-  PropInfo: PPropInfo;
   PropName: string;
 begin
   for Instance in FInstanceArr do
     begin
-      PropName := GetPropNameByFieldName(Instance.FieldName);
-      PropInfo := GetPropInfo(Self, PropName);
-
-      if PropInfo <> nil then
-        SetPropValue(Self, PropName, Instance.Value);
+      if CheckPropExist(Instance.FieldName, PropName) then
+        Prop[PropName] := Instance.Value;
     end;
 end;
 
@@ -282,7 +361,7 @@ var
   OrderPart: string;
   WherePart: string;
 begin
-  FromPart := GetEntityClass.GetStructure.TableName;
+  FromPart := GetEntityClass.GetTableName;
 
   WherePart := '1 = 1';
   for i := 0 to Length(aFilterArr) - 1 do
@@ -303,9 +382,9 @@ begin
   Result := Format(Result, [FromPart, WherePart, OrderPart]);
 end;
 
-function TEntityFeatID.GetSelectSQLString: string;
+function TEntityFeatID.GetWherePart: string;
 begin
-  Result := Format('select * from %s where ID = :ID', [GetTableName]);
+  Result := 'ID = :ID';
 end;
 
 constructor TEntityFeatID.Create(aDBEngine: TDBEngine; aID: Integer);
@@ -356,20 +435,8 @@ begin
 end;
 
 function TEntityAbstract.GetSelectSQLString: string;
-var
-  i: Integer;
-  KeyField: TKeyField;
 begin
-  Result := Format('select * from %s where', [GetTableName]);
-
-  i := 0;
-  for KeyField in GetStructure.PrimaryKeyArr do
-    begin
-      if i > 0 then Result := Result + ' and';
-      Result := Result + Format(' %s = :%s', [KeyField.FieldName, KeyField.FieldName]);
-
-      Inc(i);
-    end;
+  Result := Format('select * from %s where %s', [GetTableName, GetWherePart]);
 end;
 
 class function TEntityAbstract.GetTableName: string;
@@ -422,7 +489,7 @@ begin
   if not FIsNewInstance then
     begin
       ReadInstance(aPKeyValueArr);
-      AssignFromInstance;
+      AssignPropsFromInstance;
     end;
 end;
 
