@@ -30,13 +30,18 @@ type
     procedure ExecQuery(aQuery: TFDQuery); virtual;
     procedure OpenConnection;
     procedure OpenQuery(aQuery: TFDQuery; aIsFetchAll: Boolean = True);
+    constructor Create(aConnectParams: TConnectParams);
     destructor Destroy; override;
-    property ConnectParams: TConnectParams read FConnectParams write FConnectParams;
   end;
 
   TDBEngineClass = class of TDBEngine;
 
 implementation
+
+constructor TDBEngine.Create(aConnectParams: TConnectParams);
+begin
+  FConnectParams := aConnectParams;
+end;
 
 procedure TDBEngine.ExecQuery(aQuery: TFDQuery);
 begin

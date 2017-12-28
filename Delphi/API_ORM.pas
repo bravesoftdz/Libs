@@ -3,6 +3,7 @@ unit API_ORM;
 interface
 
 uses
+  API_Crypt,
   API_DB,
   Data.DB,
   FireDAC.Comp.Client,
@@ -29,7 +30,7 @@ type
 
   TORMEngine = class
   public
-    class function GetInstanceArr(aQuery: TFDQuery): TArray<TInstance>;
+    class function GetInstanceArr(aQuery: TFDQuery; aCryptEngine: TCryptEngine = nil): TArray<TInstance>;
   end;
 
 {$M+}
@@ -57,6 +58,7 @@ type
     procedure SetProp(aPropName: string; aValue: Variant);
     procedure UpdateToDB;
   protected
+    FCryptEngine: TCryptEngine;
     function CheckPropExist(aFieldName: string; out aPropName: string): Boolean;
   public
     class function GetStructure: TSructure; virtual; abstract;
@@ -89,6 +91,8 @@ type
     FDBEngine: TDBEngine;
     function GetSelectSQLString(aFilterArr, aOrderArr: TArray<string>): string;
     procedure FillListByInstances(aFilterArr, aOrderArr: TArray<string>);
+  protected
+    FCryptEngine: TCryptEngine;
   public
     class function GetEntityClass: TEntityClass;
     constructor Create(aDBEngine: TDBEngine; aFilterArr, aOrderArr: TArray<string>);
@@ -320,7 +324,7 @@ begin
   AssignPropsFromInstance;
 end;
 
-class function TORMEngine.GetInstanceArr(aQuery: TFDQuery): TArray<TInstance>;
+class function TORMEngine.GetInstanceArr(aQuery: TFDQuery; aCryptEngine: TCryptEngine = nil): TArray<TInstance>;
 var
   i: Integer;
   Instance: TInstance;
@@ -329,9 +333,15 @@ begin
 
   for i := 0 to aQuery.Fields.Count - 1 do
     begin
-      Instance.FieldName := aQuery.Fields[i].FullName;
+      Instance.FieldName := UpperCase(aQuery.Fields[i].FullName);
       Instance.FieldType := aQuery.Fields[i].DataType;
-      Instance.Value := aQuery.Fields[i].Value;
+
+      if (Instance.FieldType in [ftString, ftWideMemo]) and
+         Assigned(aCryptEngine)
+      then
+        Instance.Value := aCryptEngine.Decrypt(aQuery.Fields[i].Value)
+      else
+        Instance.Value := aQuery.Fields[i].Value;
 
       Result := Result + [Instance];
     end;
@@ -429,6 +439,13 @@ begin
     ftInteger: aParam.AsInteger := aValue;
     ftDateTime: aParam.AsDateTime := aValue;
     ftBoolean: aParam.AsBoolean := aValue;
+    ftString, ftWideMemo:
+      begin
+        if Assigned(FCryptEngine) then
+          aParam.AsString := FCryptEngine.Encrypt(aValue)
+        else
+          aParam.AsString := aValue;
+      end
   else
     aParam.AsString := aValue;
   end;
@@ -509,7 +526,7 @@ begin
 
     while not dsQuery.EOF do
       begin
-        InstanceArr := TORMEngine.GetInstanceArr(dsQuery);
+        InstanceArr := TORMEngine.GetInstanceArr(dsQuery, FCryptEngine);
 
         Entity := GetEntityClass.Create(FDBEngine, InstanceArr);
         Add(Entity);
