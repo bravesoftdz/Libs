@@ -7,10 +7,11 @@ uses
   System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
   API_MVC,
   API_MVC_DB,
+  API_ORM_VCLBind,
   FireDAC.VCLUI.Wait;
 
 type
-  TViewVCLBase = class(TForm, IViewAbstract)
+  TViewVCLBase = class(TORMBindedForm, IViewAbstract)
   private
     { Private declarations }
     FOnViewMessage: TViewMessageProc;
@@ -33,7 +34,7 @@ type
 
   TControllerVCLBase = class(TControllerDB)
   protected
-    procedure CallView(aViewVCLClass: TViewVCLBaseClass; aIsModal: Boolean = False);
+    procedure CreateView(aViewVCLClass: TViewVCLBaseClass; aInstantShow: Boolean = False);
   end;
 
 var
@@ -48,16 +49,14 @@ begin
   Action := caFree;
 end;
 
-procedure TControllerVCLBase.CallView(aViewVCLClass: TViewVCLBaseClass; aIsModal: Boolean = False);
+procedure TControllerVCLBase.CreateView(aViewVCLClass: TViewVCLBaseClass; aInstantShow: Boolean = False);
 var
   View: TViewVCLBase;
 begin
   View := aViewVCLClass.Create(nil);
   View.OnViewMessage := ProcessMessage;
 
-  if aIsModal then
-    View.ShowModal
-  else
+  if aInstantShow then
     View.Show;
 end;
 

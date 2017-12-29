@@ -66,6 +66,7 @@ type
     class procedure AddKey(var aKeyArr: TArray<TKeyField>; aFieldName: string;
       aFieldType: TFieldType);
     procedure Delete;
+    procedure Revert;
     procedure Store;
     constructor Create(aDBEngine: TDBEngine; aInstanceArr: TArray<TInstance>); overload;
     constructor Create(aDBEngine: TDBEngine; aPKeyValueArr: TArray<Variant>); overload;
@@ -103,6 +104,12 @@ implementation
 uses
   System.TypInfo,
   System.SysUtils;
+
+procedure TEntityAbstract.Revert;
+begin
+  if not FIsNewInstance then
+    AssignPropsFromInstance;
+end;
 
 function TEntityAbstract.GetDeleteSQLString: string;
 begin
@@ -383,10 +390,12 @@ begin
   OrderPart := '';
   for i := 0 to Length(aOrderArr) - 1 do
     begin
-      if i > 0 then OrderPart := OrderPart + ', ';
+      if i > 0 then
+        OrderPart := OrderPart + ', ';
       OrderPart := OrderPart + aOrderArr[i];
     end;
-  if not OrderPart.IsEmpty then OrderPart := 'order by ' + OrderPart;
+  if not OrderPart.IsEmpty then
+    OrderPart := 'order by ' + OrderPart;
 
   Result := 'select * from %s where %s %s';
   Result := Format(Result, [FromPart, WherePart, OrderPart]);
@@ -434,6 +443,8 @@ begin
   else
     FieldType := GetPrimKeyFieldType(aParam.Name);
 
+  aParam.DataType := FieldType;
+
   case FieldType of
     ftFloat: aParam.AsFloat := aValue;
     ftInteger: aParam.AsInteger := aValue;
@@ -441,10 +452,13 @@ begin
     ftBoolean: aParam.AsBoolean := aValue;
     ftString, ftWideMemo:
       begin
-        if Assigned(FCryptEngine) then
-          aParam.AsString := FCryptEngine.Encrypt(aValue)
+        if aValue = '' then
+          aParam.Clear
         else
-          aParam.AsString := aValue;
+          if Assigned(FCryptEngine) then
+            aParam.AsString := FCryptEngine.Encrypt(aValue)
+          else
+            aParam.AsString := aValue;
       end
   else
     aParam.AsString := aValue;
@@ -529,6 +543,7 @@ begin
         InstanceArr := TORMEngine.GetInstanceArr(dsQuery, FCryptEngine);
 
         Entity := GetEntityClass.Create(FDBEngine, InstanceArr);
+        Entity.FCryptEngine := Self.FCryptEngine;
         Add(Entity);
 
         dsQuery.Next;
