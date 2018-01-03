@@ -1,3 +1,8 @@
 /Delphi/__history
 /DelphiVendors/DCEF4/demos/SimpleBrowser/Win32/Debug
 /DelphiVendors/DCEF4/source/Win32/Debug
+/DelphiVendors/DCEF4/demos/MiniBrowser/Win32/Debug
+/DelphiVendors/DCEF4/demos/MiniBrowser/*.local
+/DelphiVendors/DCEF4/demos/MiniBrowser/*.identcache
+/DelphiVendors/DCEF4/demos/MiniBrowser/*.res
+/DelphiVendors/DCEF4/demos/MiniBrowser/*.stat
