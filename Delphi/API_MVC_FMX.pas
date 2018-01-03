@@ -5,7 +5,8 @@ interface
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
-  API_MVC;
+  API_MVC,
+  API_MVC_DB;
 
 type
   TViewFMXBase = class(TForm, IViewAbstract)
@@ -27,12 +28,30 @@ type
     property OnViewMessage: TViewMessageProc read FOnViewMessage write FOnViewMessage;
   end;
 
+  TViewFMXBaseClass = class of TViewFMXBase;
+
+  TControllerFMXBase = class(TControllerDB)
+  protected
+    procedure CreateView(aViewFMXClass: TViewFMXBaseClass; aInstantShow: Boolean = False);
+  end;
+
 var
   ViewFMXBase: TViewFMXBase;
 
 implementation
 
 {$R *.fmx}
+
+procedure TControllerFMXBase.CreateView(aViewFMXClass: TViewFMXBaseClass; aInstantShow: Boolean = False);
+var
+  View: TViewFMXBase;
+begin
+  View := aViewFMXClass.Create(nil);
+  View.OnViewMessage := ProcessMessage;
+
+  if aInstantShow then
+    View.Show;
+end;
 
 destructor TViewFMXBase.Destroy;
 begin
