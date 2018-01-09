@@ -30,11 +30,11 @@ type
     property OnViewMessage: TViewMessageProc read FOnViewMessage write FOnViewMessage;
   end;
 
-  TViewVCLBaseClass = class of TViewVCLBase;
+  TViewVCLClass = class of TViewVCLBase;
 
   TControllerVCLBase = class(TControllerDB)
   protected
-    procedure CreateView(aViewVCLClass: TViewVCLBaseClass; aInstantShow: Boolean = False);
+    procedure CreateView<T: TViewVCLBase>(aInstantShow: Boolean = False);
   end;
 
 var
@@ -49,11 +49,14 @@ begin
   Action := caFree;
 end;
 
-procedure TControllerVCLBase.CreateView(aViewVCLClass: TViewVCLBaseClass; aInstantShow: Boolean = False);
+procedure TControllerVCLBase.CreateView<T>(aInstantShow: Boolean = False);
 var
   View: TViewVCLBase;
+  ViewVCLClass: TViewVCLClass;
 begin
-  View := aViewVCLClass.Create(nil);
+  ViewVCLClass := T;
+
+  View := ViewVCLClass.Create(nil);
   View.OnViewMessage := ProcessMessage;
 
   if aInstantShow then

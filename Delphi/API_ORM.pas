@@ -65,6 +65,7 @@ type
     function GetUpdateSQLString: string;
     function GetWherePart: string; virtual;
     procedure AddListFreeProc(aCode, aData: Pointer);
+    procedure AddListStoreProc(aCode, aData: Pointer);
     procedure AssignInstanceFromProps;
     procedure AssignPropsFromInstance;
     procedure ExecToDB(aSQL: string);
@@ -133,9 +134,19 @@ uses
   System.SysUtils,
   System.Variants;
 
+procedure TEntityAbstract.AddListStoreProc(aCode, aData: Pointer);
+var
+  Method: TMethod;
+begin
+  Method.Code := aCode;
+  Method.Data := aData;
+
+  FStoreListProcArr := FStoreListProcArr + [Method];
+end;
+
 procedure TEntityList<T>.Store;
 var
-  Entity: TEntityAbstract;
+  Entity: T;
   ForeignKey: TForeignKey;
   KeyPropName: string;
   RefPropName: string;
@@ -210,8 +221,8 @@ var
   FilterArr: TArray<string>;
   ForeignKey: TForeignKey;
   ForeignKeyArr: TArray<TForeignKey>;
-  FreeProc: TObjProc;
   i: Integer;
+  Proc: TObjProc;
 begin
   ForeignKeyArr := GetEntityClass.GetStructure.ForeignKeyArr;
 
@@ -237,8 +248,11 @@ begin
       FCryptEngine := aOwnerEntity.FCryptEngine;
       Create(aOwnerEntity.FDBEngine, FilterArr, aOrderArr);
 
-      FreeProc := Free;
-      aOwnerEntity.AddListFreeProc(@FreeProc, Self);
+      Proc := Free;
+      aOwnerEntity.AddListFreeProc(@Proc, Self);
+
+      Proc := Store;
+      aOwnerEntity.AddListStoreProc(@Proc, Self);
     end;
 end;
 
