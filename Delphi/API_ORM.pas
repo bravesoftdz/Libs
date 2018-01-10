@@ -8,7 +8,8 @@ uses
   Data.DB,
   FireDAC.Comp.Client,
   FireDAC.Stan.Param,
-  System.Generics.Collections;
+  System.Generics.Collections,
+  System.TypInfo;
 
 type
   TEntityAbstract = class;
@@ -39,11 +40,8 @@ type
     Value: Variant;
   end;
 
-  TORMEngine = class
-  public
-    class function GetInstanceArr(aQuery: TFDQuery; aCryptEngine: TCryptEngine = nil): TArray<TInstance>;
-    class function GetPropNameByFieldName(aFieldName: string): string;
-  end;
+  TForEachJoinProc = procedure(aEntity: TEntityAbstract; aForeignKey: TForeignKey;
+    const aPropName: string) of object;
 
 {$M+}
   TEntityAbstract = class abstract
@@ -53,9 +51,13 @@ type
     FInstanceArr: TArray<TInstance>;
     FIsNewInstance: Boolean;
     FStoreListProcArr: TArray<TMethod>;
+    class function GetInstanceArr(aQuery: TFDQuery; aCryptEngine: TCryptEngine = nil): TArray<TInstance>;
+    class function GetPropNameByFieldName(aFieldName: string): string;
+    function CheckPropExist(aFieldName: string; out aPropName: string): Boolean;
     function GetDeleteSQLString: string;
     function GetInsertSQLString: string;
     function GetInstanceFieldType(aFieldName: string): TFieldType;
+    function GetInstanceValue(aFieldName: string): Variant;
     function GetEmptySelectSQLString: string;
     function GetNormInstanceValue(aInstance: TInstance): Variant;
     function GetNormPropValue(aPropName: string): Variant;
@@ -64,21 +66,30 @@ type
     function GetSelectSQLString: string;
     function GetUpdateSQLString: string;
     function GetWherePart: string; virtual;
-    procedure AddListFreeProc(aCode, aData: Pointer);
-    procedure AddListStoreProc(aCode, aData: Pointer);
+    procedure AddProcToArr(var aProcArr: TArray<TMethod>; aCode, aData: Pointer);
     procedure AssignInstanceFromProps;
+    procedure AssignProps;
     procedure AssignPropsFromInstance;
+    procedure CreateJoinEntity(aEntity: TEntityAbstract; aForeignKey: TForeignKey;
+      const aPropName: string);
+    procedure ExecProcArr(aProcArr: TArray<TMethod>);
     procedure ExecToDB(aSQL: string);
     procedure FillParam(aParam: TFDParam; aValue: Variant);
+    procedure ForEachJoinEntities(aForEachJoinProc: TForEachJoinProc);
+    procedure FreeJoinEntity(aEntity: TEntityAbstract; aForeignKey: TForeignKey;
+      const aPropName: string);
+    procedure FreeJoins;
     procedure FreeLists;
     procedure InsertToDB; virtual;
     procedure ReadInstance(aPKeyValueArr: TArray<Variant>);
     procedure SetProp(aPropName: string; aValue: Variant);
+    procedure StoreJoinEntity(aEntity: TEntityAbstract; aForeignKey: TForeignKey;
+      const aPropName: string);
+    procedure StoreJoins;
     procedure StoreLists;
     procedure UpdateToDB;
   protected
     FCryptEngine: TCryptEngine;
-    function CheckPropExist(aFieldName: string; out aPropName: string): Boolean;
   public
     class function GetStructure: TSructure; virtual; abstract;
     class function GetTableName: string;
@@ -91,6 +102,8 @@ type
     procedure Store;
     procedure StoreAll;
     constructor Create(aDBEngine: TDBEngine; aInstanceArr: TArray<TInstance>); overload;
+    constructor Create(aDBEngine: TDBEngine; aCryptEngine: TCryptEngine;
+      aPKeyValueArr: TArray<Variant>); overload;
     constructor Create(aDBEngine: TDBEngine; aPKeyValueArr: TArray<Variant>); overload;
     destructor Destroy; override;
     property Prop[aPropName: string]: Variant read GetProp write SetProp;
@@ -113,16 +126,23 @@ type
     FDBEngine: TDBEngine;
     FForeignKeyArr: TArray<TForeignKey>;
     FOwnerEntity: TEntityAbstract;
+    FRecycleBin: TArray<T>;
     function GetSelectSQLString(aFilterArr, aOrderArr: TArray<string>): string;
+    procedure CleanRecycleBin;
     procedure FillListByInstances(aFilterArr, aOrderArr: TArray<string>);
   protected
     FCryptEngine: TCryptEngine;
   public
     class function GetEntityClass: TEntityClass;
+    procedure Clear;
+    procedure Delete(const aIndex: Integer);
+    procedure Remove(const aEntity: T); overload;
+    procedure Remove(const aIndex: Integer); overload;
     procedure Store;
     constructor Create(aDBEngine: TDBEngine; aFilterArr, aOrderArr: TArray<string>); overload;
     constructor Create(aOwnerEntity: TEntityAbstract); overload;
     constructor Create(aOwnerEntity: TEntityAbstract; aOrderArr: TArray<string>); overload;
+    destructor Destroy; override;
   end;
 
   TObjProc = procedure of object;
@@ -130,18 +150,189 @@ type
 implementation
 
 uses
-  System.TypInfo,
   System.SysUtils,
   System.Variants;
 
-procedure TEntityAbstract.AddListStoreProc(aCode, aData: Pointer);
+constructor TEntityAbstract.Create(aDBEngine: TDBEngine; aCryptEngine: TCryptEngine;
+  aPKeyValueArr: TArray<Variant>);
+begin
+  FCryptEngine := aCryptEngine;
+  Create(aDBEngine, aPKeyValueArr);
+end;
+
+procedure TEntityAbstract.StoreJoinEntity(aEntity: TEntityAbstract; aForeignKey: TForeignKey;
+  const aPropName: string);
+var
+  KeyPropName: string;
+  RelPropName: string;
+begin
+  if aEntity = nil then
+    Exit;
+
+  aEntity.StoreAll;
+
+  KeyPropName := GetPropNameByFieldName(aForeignKey.FieldName);
+  RelPropName := GetPropNameByFieldName(aForeignKey.ReferFieldName);
+  Self.Prop[KeyPropName] := aEntity.Prop[RelPropName];
+end;
+
+procedure TEntityAbstract.FreeJoinEntity(aEntity: TEntityAbstract; aForeignKey: TForeignKey;
+  const aPropName: string);
+begin
+  aEntity.Free;
+end;
+
+procedure TEntityAbstract.FreeJoins;
+begin
+  ForEachJoinEntities(FreeJoinEntity);
+end;
+
+procedure TEntityAbstract.StoreJoins;
+begin
+  ForEachJoinEntities(StoreJoinEntity);
+end;
+
+procedure TEntityAbstract.ExecProcArr(aProcArr: TArray<TMethod>);
+var
+  Proc: TObjProc;
+  Method: TMethod;
+begin
+  for Method in aProcArr do
+    begin
+      Proc := TObjProc(Method);
+      Proc;
+    end;
+end;
+
+procedure TEntityAbstract.AddProcToArr(var aProcArr: TArray<TMethod>; aCode, aData: Pointer);
 var
   Method: TMethod;
 begin
   Method.Code := aCode;
   Method.Data := aData;
 
-  FStoreListProcArr := FStoreListProcArr + [Method];
+  aProcArr := aProcArr + [Method];
+end;
+
+function TEntityAbstract.GetInstanceValue(aFieldName: string): Variant;
+var
+  Instance: TInstance;
+begin
+  for Instance in FInstanceArr do
+    if Instance.FieldName = aFieldName then
+      Exit(Instance.Value);
+end;
+
+procedure TEntityAbstract.CreateJoinEntity(aEntity: TEntityAbstract; aForeignKey: TForeignKey;
+  const aPropName: string);
+var
+  Entity: TEntityAbstract;
+  ForeignKeyValue: Variant;
+begin
+  if aEntity <> nil then Exit;
+
+  ForeignKeyValue := GetInstanceValue(aForeignKey.FieldName);
+
+  if not VarIsNull(ForeignKeyValue) then
+    begin
+      Entity := aForeignKey.ReferEntityClass.Create(FDBEngine, FCryptEngine, [ForeignKeyValue]);
+
+      SetObjectProp(Self, aPropName, Entity);
+    end;
+end;
+
+procedure TEntityAbstract.ForEachJoinEntities(aForEachJoinProc: TForEachJoinProc);
+var
+  Entity: TEntityAbstract;
+  ForeignKey: TForeignKey;
+  i: Integer;
+  PropCount: Integer;
+  PropClass: TClass;
+  PropList: PPropList;
+  PropName: string;
+  PropObject: TObject;
+begin
+  PropCount := GetPropList(Self, PropList);
+  try
+    for ForeignKey in GetStructure.ForeignKeyArr do
+      begin
+        for i := 0 to PropCount - 1 do
+          begin
+            PropClass := GetObjectPropClass(Self, PropList^[i]);
+
+            if ForeignKey.ReferEntityClass = PropClass then
+              begin
+                PropName := GetPropName(PropList^[i]);
+                PropObject := GetObjectProp(Self, PropName);
+
+                if (PropObject <> nil) and
+                   (PropObject.ClassType = PropClass)
+                then
+                  Entity := PropObject as ForeignKey.ReferEntityClass
+                else
+                  Entity := nil;
+
+                aForEachJoinProc(Entity, ForeignKey, PropName);
+              end;
+          end;
+      end;
+  finally
+    FreeMem(PropList);
+  end;
+end;
+
+procedure TEntityAbstract.AssignProps;
+begin
+  AssignPropsFromInstance;
+  ForEachJoinEntities(CreateJoinEntity);
+end;
+
+procedure TEntityList<T>.Clear;
+var
+  Entity: T;
+  EntityArr: TArray<T>;
+begin
+  EntityArr := Self.ToArray;
+
+  for Entity in EntityArr do
+    Self.Remove(Entity);
+end;
+
+procedure TEntityList<T>.CleanRecycleBin;
+var
+  Entity: T;
+begin
+  for Entity in FRecycleBin do
+    Entity.Delete;
+end;
+
+destructor TEntityList<T>.Destroy;
+var
+  Entity: T;
+begin
+  for Entity in FRecycleBin do
+    Entity.Free;
+
+  inherited;
+end;
+
+procedure TEntityList<T>.Delete(const aIndex: Integer);
+begin
+  Remove(aIndex);
+end;
+
+procedure TEntityList<T>.Remove(const aEntity: T);
+begin
+  Extract(aEntity);
+  FRecycleBin := FRecycleBin + [aEntity];
+end;
+
+procedure TEntityList<T>.Remove(const aIndex: Integer);
+var
+  Entity: T;
+begin
+  Entity := Items[aIndex];
+  Remove(Entity);
 end;
 
 procedure TEntityList<T>.Store;
@@ -151,14 +342,16 @@ var
   KeyPropName: string;
   RefPropName: string;
 begin
+  CleanRecycleBin;
+
   for Entity in Self do
     begin
       if Assigned(FOwnerEntity) then
         begin
           for ForeignKey in FForeignKeyArr do
             begin
-              KeyPropName := TORMEngine.GetPropNameByFieldName(ForeignKey.FieldName);
-              RefPropName := TORMEngine.GetPropNameByFieldName(ForeignKey.ReferFieldName);
+              KeyPropName := TEntityAbstract.GetPropNameByFieldName(ForeignKey.FieldName);
+              RefPropName := TEntityAbstract.GetPropNameByFieldName(ForeignKey.ReferFieldName);
 
               Entity.Prop[KeyPropName] := FOwnerEntity.Prop[RefPropName];
             end;
@@ -169,50 +362,28 @@ begin
 end;
 
 procedure TEntityAbstract.StoreLists;
-var
-  StoreListProc: TObjProc;
-  Method: TMethod;
 begin
-  for Method in FStoreListProcArr do
-    begin
-      StoreListProc := TObjProc(Method);
-      StoreListProc;
-    end;
+  ExecProcArr(FStoreListProcArr);
 end;
 
 procedure TEntityAbstract.StoreAll;
 begin
+  StoreJoins;
   Store;
   StoreLists;
 end;
 
 procedure TEntityAbstract.FreeLists;
-var
-  FreeListProc: TObjProc;
-  Method: TMethod;
 begin
-  for Method in FFreeListProcArr do
-    begin
-      FreeListProc := TObjProc(Method);
-      FreeListProc;
-    end;
+  ExecProcArr(FFreeListProcArr);
 end;
 
 destructor TEntityAbstract.Destroy;
 begin
+  FreeJoins;
   FreeLists;
 
   inherited;
-end;
-
-procedure TEntityAbstract.AddListFreeProc(aCode, aData: Pointer);
-var
-  Method: TMethod;
-begin
-  Method.Code := aCode;
-  Method.Data := aData;
-
-  FFreeListProcArr := FFreeListProcArr + [Method];
 end;
 
 constructor TEntityList<T>.Create(aOwnerEntity: TEntityAbstract; aOrderArr: TArray<string>);
@@ -249,10 +420,10 @@ begin
       Create(aOwnerEntity.FDBEngine, FilterArr, aOrderArr);
 
       Proc := Free;
-      aOwnerEntity.AddListFreeProc(@Proc, Self);
+      aOwnerEntity.AddProcToArr(aOwnerEntity.FFreeListProcArr, @Proc, Self);
 
       Proc := Store;
-      aOwnerEntity.AddListStoreProc(@Proc, Self);
+      aOwnerEntity.AddProcToArr(aOwnerEntity.FStoreListProcArr, @Proc, Self);
     end;
 end;
 
@@ -325,8 +496,11 @@ procedure TEntityAbstract.Delete;
 var
   SQL: string;
 begin
-  SQL := GetDeleteSQLString;
-  ExecToDB(SQL);
+  if not FIsNewInstance then
+    begin
+      SQL := GetDeleteSQLString;
+      ExecToDB(SQL);
+    end;
 end;
 
 procedure TEntityAbstract.ExecToDB(aSQL: string);
@@ -341,7 +515,7 @@ begin
 
     for i := 0 to dsQuery.Params.Count - 1 do
       begin
-        PropName := TORMEngine.GetPropNameByFieldName(dsQuery.Params[i].Name);
+        PropName := GetPropNameByFieldName(dsQuery.Params[i].Name);
         FillParam(dsQuery.Params[i], Prop[PropName]);
       end;
 
@@ -371,7 +545,7 @@ function TEntityAbstract.CheckPropExist(aFieldName: string; out aPropName: strin
 var
   PropInfo: PPropInfo;
 begin
-  aPropName := TORMEngine.GetPropNameByFieldName(aFieldName);
+  aPropName := GetPropNameByFieldName(aFieldName);
   PropInfo := GetPropInfo(Self, aPropName);
 
   if PropInfo <> nil then
@@ -467,6 +641,7 @@ var
   FieldsPart: string;
   i: Integer;
   Instance: TInstance;
+  PropName: string;
   ValuesPart: string;
 begin
   i := 0;
@@ -474,7 +649,9 @@ begin
   ValuesPart := '';
   for Instance in FInstanceArr do
     begin
-      if Instance.FieldType <> ftAutoInc then
+      if (Instance.FieldType <> ftAutoInc) and
+         (CheckPropExist(Instance.FieldName, PropName))
+      then
         begin
           if i > 0 then
             begin
@@ -533,10 +710,10 @@ begin
   FIsNewInstance := False;
 
   FInstanceArr := aInstanceArr;
-  AssignPropsFromInstance;
+  AssignProps;
 end;
 
-class function TORMEngine.GetInstanceArr(aQuery: TFDQuery; aCryptEngine: TCryptEngine = nil): TArray<TInstance>;
+class function TEntityAbstract.GetInstanceArr(aQuery: TFDQuery; aCryptEngine: TCryptEngine = nil): TArray<TInstance>;
 var
   i: Integer;
   Instance: TInstance;
@@ -548,7 +725,7 @@ begin
       Instance.FieldName := UpperCase(aQuery.Fields[i].FullName);
       Instance.FieldType := aQuery.Fields[i].DataType;
 
-      if (Instance.FieldType in [ftString, ftWideMemo]) and
+      if (Instance.FieldType in [ftString, ftWideString, ftWideMemo]) and
          (Assigned(aCryptEngine)) and
          (not aQuery.Fields[i].IsNull)
       then
@@ -626,7 +803,7 @@ begin
   inherited Create(aDBEngine, ValArr);
 end;
 
-class function TORMEngine.GetPropNameByFieldName(aFieldName: string): string;
+class function TEntityAbstract.GetPropNameByFieldName(aFieldName: string): string;
 begin
   Result := aFieldName.Replace('_', '');
 end;
@@ -658,7 +835,7 @@ begin
     ftInteger: aParam.AsInteger := aValue;
     ftDateTime: aParam.AsDateTime := aValue;
     ftBoolean: aParam.AsBoolean := aValue;
-    ftString, ftWideMemo:
+    ftString, ftWideString, ftWideMemo:
       begin
         if aValue = '' then
           aParam.Clear
@@ -714,7 +891,7 @@ begin
 
     FDBEngine.OpenQuery(dsQuery);
 
-    FInstanceArr := TORMEngine.GetInstanceArr(dsQuery, FCryptEngine);
+    FInstanceArr := GetInstanceArr(dsQuery, FCryptEngine);
   finally
     dsQuery.Free;
   end;
@@ -728,7 +905,7 @@ begin
   if not FIsNewInstance then
     begin
       ReadInstance(aPKeyValueArr);
-      AssignPropsFromInstance;
+      AssignProps;
     end;
 end;
 
@@ -748,7 +925,7 @@ begin
 
     while not dsQuery.EOF do
       begin
-        InstanceArr := TORMEngine.GetInstanceArr(dsQuery, FCryptEngine);
+        InstanceArr := TEntityAbstract.GetInstanceArr(dsQuery, FCryptEngine);
 
         Entity := GetEntityClass.Create(FDBEngine, InstanceArr);
         Entity.FCryptEngine := Self.FCryptEngine;
