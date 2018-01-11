@@ -40,9 +40,6 @@ type
     Value: Variant;
   end;
 
-  TForEachJoinProc = procedure(aEntity: TEntityAbstract; aForeignKey: TForeignKey;
-    const aPropName: string) of object;
-
 {$M+}
   TEntityAbstract = class abstract
   private
@@ -50,10 +47,14 @@ type
     FDBEngine: TDBEngine;
     FInstanceArr: TArray<TInstance>;
     FIsNewInstance: Boolean;
+    FJoinChildEntityArr: TArray<TEntityAbstract>;
+    FJoinParentEntityArr: TArray<TEntityAbstract>;
     FStoreListProcArr: TArray<TMethod>;
     class function GetInstanceArr(aQuery: TFDQuery; aCryptEngine: TCryptEngine = nil): TArray<TInstance>;
     class function GetPropNameByFieldName(aFieldName: string): string;
     function CheckPropExist(aFieldName: string; out aPropName: string): Boolean;
+    function CreateJoinEntity(aEntityClass: TEntityClass; aEntityPropName, aFieldName,
+      aReferFieldName: string): TEntityAbstract;
     function GetDeleteSQLString: string;
     function GetInsertSQLString: string;
     function GetInstanceFieldType(aFieldName: string): TFieldType;
@@ -70,22 +71,17 @@ type
     procedure AssignInstanceFromProps;
     procedure AssignProps;
     procedure AssignPropsFromInstance;
-    procedure CreateJoinEntity(aEntity: TEntityAbstract; aForeignKey: TForeignKey;
-      const aPropName: string);
+    procedure CreateJoinChildEntities;
+    procedure CreateJoinParentEntities;
     procedure ExecProcArr(aProcArr: TArray<TMethod>);
     procedure ExecToDB(aSQL: string);
     procedure FillParam(aParam: TFDParam; aValue: Variant);
-    procedure ForEachJoinEntities(aForEachJoinProc: TForEachJoinProc);
-    procedure FreeJoinEntity(aEntity: TEntityAbstract; aForeignKey: TForeignKey;
-      const aPropName: string);
-    procedure FreeJoins;
+    procedure FreeJoins(aJoinEntityArr: TArray<TEntityAbstract>);
     procedure FreeLists;
     procedure InsertToDB; virtual;
     procedure ReadInstance(aPKeyValueArr: TArray<Variant>);
     procedure SetProp(aPropName: string; aValue: Variant);
-    procedure StoreJoinEntity(aEntity: TEntityAbstract; aForeignKey: TForeignKey;
-      const aPropName: string);
-    procedure StoreJoins;
+    procedure StoreJoins(aJoinEntityArr: TArray<TEntityAbstract>);
     procedure StoreLists;
     procedure UpdateToDB;
   protected
@@ -153,6 +149,107 @@ uses
   System.SysUtils,
   System.Variants;
 
+procedure TEntityAbstract.StoreJoins(aJoinEntityArr: TArray<TEntityAbstract>);
+var
+ JoinEntity: TEntityAbstract;
+begin
+  for JoinEntity in aJoinEntityArr do
+    JoinEntity.StoreAll;
+end;
+
+function TEntityAbstract.CreateJoinEntity(aEntityClass: TEntityClass; aEntityPropName,
+  aFieldName, aReferFieldName: string): TEntityAbstract;
+var
+  dsQuery: TFDQuery;
+  InstanceArr: TArray<TInstance>;
+  KeyValue: Variant;
+  PropName: string;
+  SQL: string;
+begin
+  Result := nil;
+
+  PropName := GetPropNameByFieldName(aFieldName);
+  KeyValue := Prop[PropName];
+
+  if (VarToStr(KeyValue) <> '') and
+     (VarToStr(KeyValue) <> '0')
+  then
+    begin
+      SQL := 'select * from %s where %s = ''%s''';
+      SQL := Format(SQL, [
+        aEntityClass.GetTableName,
+        aReferFieldName,
+        VarToStr(KeyValue)
+      ]);
+
+      dsQuery := TFDQuery.Create(nil);
+      try
+        dsQuery.SQL.Text := SQL;
+        FDBEngine.OpenQuery(dsQuery);
+
+        if not dsQuery.IsEmpty then
+          begin
+            InstanceArr := GetInstanceArr(dsQuery, FCryptEngine);
+
+            Result := aEntityClass.Create(FDBEngine, InstanceArr);
+            Result.FCryptEngine := FCryptEngine;
+
+            SetObjectProp(Self, aEntityPropName, Result);
+          end;
+      finally
+        dsQuery.Free;
+      end;
+    end;
+end;
+
+procedure TEntityAbstract.CreateJoinChildEntities;
+var
+  ChildEntity: TEntityAbstract;
+  EntityClass: TEntityClass;
+  ForeignKey: TForeignKey;
+  ForeignKeyArr: TArray<TForeignKey>;
+  i: Integer;
+  PropCount: Integer;
+  PropClass: TClass;
+  PropList: PPropList;
+  PropName: string;
+begin
+  PropCount := GetPropList(Self, PropList);
+  try
+    for i := 0 to PropCount - 1 do
+      begin
+        if PropList^[i].PropType^.Kind = tkClass then
+          begin
+            PropClass := GetObjectPropClass(Self, PropList^[i]);
+
+            if PropClass.InheritsFrom(TEntityAbstract) then
+              begin
+                EntityClass := TEntityClass(PropClass);
+                ForeignKeyArr := EntityClass.GetStructure.ForeignKeyArr;
+
+                for ForeignKey in ForeignKeyArr do
+                  if Self.ClassType = ForeignKey.ReferEntityClass then
+                    begin
+                      PropName := GetPropName(PropList^[i]);
+
+                      ChildEntity := CreateJoinEntity(
+                        EntityClass,
+                        PropName,
+                        ForeignKey.ReferFieldName,
+                        ForeignKey.FieldName
+                      );
+
+                      if Assigned(ChildEntity) then
+                        FJoinChildEntityArr := FJoinChildEntityArr + [ChildEntity];
+                    end;
+              end;
+          end;
+      end;
+  finally
+    FreeMem(PropList);
+  end;
+end;
+
 constructor TEntityAbstract.Create(aDBEngine: TDBEngine; aCryptEngine: TCryptEngine;
   aPKeyValueArr: TArray<Variant>);
 begin
@@ -160,36 +257,12 @@ begin
   Create(aDBEngine, aPKeyValueArr);
 end;
 
-procedure TEntityAbstract.StoreJoinEntity(aEntity: TEntityAbstract; aForeignKey: TForeignKey;
-  const aPropName: string);
+procedure TEntityAbstract.FreeJoins(aJoinEntityArr: TArray<TEntityAbstract>);
 var
-  KeyPropName: string;
-  RelPropName: string;
+ JoinEntity: TEntityAbstract;
 begin
-  if aEntity = nil then
-    Exit;
-
-  aEntity.StoreAll;
-
-  KeyPropName := GetPropNameByFieldName(aForeignKey.FieldName);
-  RelPropName := GetPropNameByFieldName(aForeignKey.ReferFieldName);
-  Self.Prop[KeyPropName] := aEntity.Prop[RelPropName];
-end;
-
-procedure TEntityAbstract.FreeJoinEntity(aEntity: TEntityAbstract; aForeignKey: TForeignKey;
-  const aPropName: string);
-begin
-  aEntity.Free;
-end;
-
-procedure TEntityAbstract.FreeJoins;
-begin
-  ForEachJoinEntities(FreeJoinEntity);
-end;
-
-procedure TEntityAbstract.StoreJoins;
-begin
-  ForEachJoinEntities(StoreJoinEntity);
+  for JoinEntity in aJoinEntityArr do
+    JoinEntity.Free;
 end;
 
 procedure TEntityAbstract.ExecProcArr(aProcArr: TArray<TMethod>);
@@ -218,39 +291,22 @@ function TEntityAbstract.GetInstanceValue(aFieldName: string): Variant;
 var
   Instance: TInstance;
 begin
+  Result := Null;
+
   for Instance in FInstanceArr do
     if Instance.FieldName = aFieldName then
       Exit(Instance.Value);
 end;
 
-procedure TEntityAbstract.CreateJoinEntity(aEntity: TEntityAbstract; aForeignKey: TForeignKey;
-  const aPropName: string);
+procedure TEntityAbstract.CreateJoinParentEntities;
 var
-  Entity: TEntityAbstract;
-  ForeignKeyValue: Variant;
-begin
-  if aEntity <> nil then Exit;
-
-  ForeignKeyValue := GetInstanceValue(aForeignKey.FieldName);
-
-  if not VarIsNull(ForeignKeyValue) then
-    begin
-      Entity := aForeignKey.ReferEntityClass.Create(FDBEngine, FCryptEngine, [ForeignKeyValue]);
-
-      SetObjectProp(Self, aPropName, Entity);
-    end;
-end;
-
-procedure TEntityAbstract.ForEachJoinEntities(aForEachJoinProc: TForEachJoinProc);
-var
-  Entity: TEntityAbstract;
   ForeignKey: TForeignKey;
   i: Integer;
+  ParentEntity: TEntityAbstract;
   PropCount: Integer;
   PropClass: TClass;
   PropList: PPropList;
   PropName: string;
-  PropObject: TObject;
 begin
   PropCount := GetPropList(Self, PropList);
   try
@@ -263,16 +319,16 @@ begin
             if ForeignKey.ReferEntityClass = PropClass then
               begin
                 PropName := GetPropName(PropList^[i]);
-                PropObject := GetObjectProp(Self, PropName);
 
-                if (PropObject <> nil) and
-                   (PropObject.ClassType = PropClass)
-                then
-                  Entity := PropObject as ForeignKey.ReferEntityClass
-                else
-                  Entity := nil;
+                ParentEntity := CreateJoinEntity(
+                  ForeignKey.ReferEntityClass,
+                  PropName,
+                  ForeignKey.FieldName,
+                  ForeignKey.ReferFieldName
+                );
 
-                aForEachJoinProc(Entity, ForeignKey, PropName);
+                if Assigned(ParentEntity) then
+                  FJoinParentEntityArr := FJoinParentEntityArr + [ParentEntity];
               end;
           end;
       end;
@@ -284,7 +340,8 @@ end;
 procedure TEntityAbstract.AssignProps;
 begin
   AssignPropsFromInstance;
-  ForEachJoinEntities(CreateJoinEntity);
+  CreateJoinParentEntities;
+  CreateJoinChildEntities;
 end;
 
 procedure TEntityList<T>.Clear;
@@ -368,8 +425,9 @@ end;
 
 procedure TEntityAbstract.StoreAll;
 begin
-  StoreJoins;
+  StoreJoins(FJoinParentEntityArr);
   Store;
+  StoreJoins(FJoinChildEntityArr);
   StoreLists;
 end;
 
@@ -380,7 +438,8 @@ end;
 
 destructor TEntityAbstract.Destroy;
 begin
-  FreeJoins;
+  FreeJoins(FJoinParentEntityArr);
+  FreeJoins(FJoinChildEntityArr);
   FreeLists;
 
   inherited;
