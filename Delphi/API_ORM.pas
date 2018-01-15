@@ -117,7 +117,7 @@ type
     function GetWherePart: string; override;
     procedure InsertToDB; override;
   public
-    constructor Create(aDBEngine: TDBEngine; aID: Integer);
+    constructor Create(aDBEngine: TDBEngine; aID: Integer = 0);
   published
     property ID: Integer read FID write FID;
   end;
@@ -881,7 +881,7 @@ begin
   Result := 'ID = :ID';
 end;
 
-constructor TEntityFeatID.Create(aDBEngine: TDBEngine; aID: Integer);
+constructor TEntityFeatID.Create(aDBEngine: TDBEngine; aID: Integer = 0);
 var
   ValArr: TArray<Variant>;
 begin

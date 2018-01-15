@@ -15,6 +15,8 @@ type
     Host: string;
     Login: string;
     Password: string;
+  public
+    procedure GetFormFile(aFileName: string);
   end;
 
   TDBEngine = class abstract
@@ -37,6 +39,27 @@ type
   TDBEngineClass = class of TDBEngine;
 
 implementation
+
+uses
+  System.Classes;
+
+procedure TConnectParams.GetFormFile(aFileName: string);
+var
+  SL: TStringList;
+begin
+  SL := TStringList.Create;
+  try
+    SL.LoadFromFile(aFileName);
+
+    Self.Host := SL.Values['Host'];
+    Self.DataBase := SL.Values['DataBase'];
+    Self.Login := SL.Values['Login'];
+    Self.Password := SL.Values['Password'];
+    Self.CharacterSet := SL.Values['CharacterSet'];
+  finally
+    SL.Free;
+  end;
+end;
 
 constructor TDBEngine.Create(aConnectParams: TConnectParams);
 begin

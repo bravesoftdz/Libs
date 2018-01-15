@@ -10,8 +10,11 @@ type
   TModelAbstract = class abstract
   private
     procedure Execute(Sender: TObject);
+  protected
+    FDataObj: TObjectDictionary<string, TObject>;
   public
     procedure Start; virtual; abstract;
+    constructor Create(aDataObj: TObjectDictionary<string, TObject> = nil);
   end;
 
   TModelClass = class of TModelAbstract;
@@ -48,9 +51,15 @@ type
 
 implementation
 
+constructor TModelAbstract.Create(aDataObj: TObjectDictionary<string, TObject> = nil);
+begin
+  FDataObj := aDataObj;
+end;
+
 procedure TModelAbstract.Execute(Sender: TObject);
 begin
   Start;
+  Free;
 end;
 
 procedure TControllerAbstract.CallModel<T>(aThreadCount: Integer = 1);
@@ -64,7 +73,7 @@ begin
   for i := 1 to aThreadCount do
     begin
       ModelClass := T;
-      Model := ModelClass.Create;
+      Model := ModelClass.Create(FDataObj);
 
       Task := TTask.Create(Self, Model.Execute);
       Task.Start;
