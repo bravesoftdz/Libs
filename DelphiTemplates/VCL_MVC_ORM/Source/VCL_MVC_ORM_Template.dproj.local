@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899.12.30 00:00:00.000.371,=D:\Git\Libs\DelphiTemplates\VCL_MVC_DB\Source\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.941,=D:\Git\Libs\Delphi\API_MVC_DB.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.464,D:\Git\Libs\DelphiTemplates\VCL_MVC\Source\vMain.dfm=D:\Git\Libs\DelphiTemplates\VCL_MVC\Source\Unit2.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.661,D:\Git\Libs\DelphiTemplates\VCL_MVC_DB\Source\Unit1.pas=D:\Git\Libs\Delphi\API_MVC_VCLDB.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.608,=D:\Git\Libs\DelphiTemplates\VCL_MVC\Source\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.615,D:\Git\Libs\DelphiTemplates\VCL_MVC\Source\Unit1.pas=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.215,=D:\Git\Libs\Delphi\API_DB.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.928,=D:\Git\Libs\Delphi\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.977,=D:\Git\Libs\Delphi\API_MVC.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.929,=D:\Git\Libs\Delphi\API_MVC.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.203,D:\Git\Libs\DelphiTemplates\VCL_MVC\Unit1.dfm=C:\Users\alezzle\Documents\Embarcadero\Studio\Projects\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.851,D:\Git\Libs\DelphiTemplates\VCL_MVC\Source\Unit1.dfm=D:\Git\Libs\Delphi\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.533,D:\Git\Libs\Delphi\API_DB_SQLite.pas=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.998,=D:\Git\Libs\Delphi\API_DB_SQLite.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.214,D:\Git\Libs\Delphi\API_MVC.pas=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.482,=C:\Users\alezzle\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.823,D:\Git\Libs\Delphi\API_MVC_VCL.pas=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.203,D:\Git\Libs\DelphiTemplates\VCL_MVC\Unit1.pas=C:\Users\alezzle\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.673,D:\Git\Libs\DelphiTemplates\VCL_MVC\Unit1.pas=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.791,=D:\Git\Libs\Delphi\API_MVC_VCL.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.083,=D:\Git\Libs\Delphi\API_MVC_VCL.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.703,D:\Git\Libs\Delphi\API_MVC_VCL.pas=</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.405,=D:\Git\Libs\Delphi\API_MVC_VCL.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.585,D:\Git\Libs\DelphiTemplates\VCL_MVC\Source\cController.pas=D:\Git\Libs\DelphiTemplates\VCL_MVC\Source\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.464,D:\Git\Libs\DelphiTemplates\VCL_MVC\Source\vMain.pas=D:\Git\Libs\DelphiTemplates\VCL_MVC\Source\Unit2.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.983,D:\Git\Libs\DelphiTemplates\VCL_MVC\Source\VCL_MVC_Template.dproj=D:\Git\Libs\Delphi\VCL_MVC_Template.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.851,D:\Git\Libs\DelphiTemplates\VCL_MVC\Source\Unit1.pas=D:\Git\Libs\Delphi\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.952,D:\Git\Libs\Delphi\VCL_MVC_Template.dproj=C:\Users\alezzle\Documents\Embarcadero\Studio\Projects\Project1.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.226,D:\Git\Libs\DelphiTemplates\VCL_MVC_DB\Source\VCL_MVC_Template.dproj=D:\Git\Libs\DelphiTemplates\VCL_MVC_DB\Source\VCL_MVC_DB_Template.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.512,=D:\Git\Libs\DelphiTemplates\VCL_MVC\Source\Unit2.pas</Transaction>
+    <Transaction>2018.01.16 00:05:29.357,D:\Git\Libs\DelphiTemplates\VCL_MVC_ORM\Source\VCL_MVC_ORM_Template.dproj=D:\Git\Libs\DelphiTemplates\VCL_MVC_ORM\Source\VCL_MVC_DB_Template.dproj</Transaction>
+    <Transaction>2018.01.16 00:09:03.138,=D:\Git\Libs\Delphi\API_DB_MySQL.pas</Transaction>
+  </Transactions>
+</BorlandProject>

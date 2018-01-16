@@ -5,23 +5,26 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
-  API_MVC,
-  API_MVC_DB,
-  API_ORM_VCLBind,
-  FireDAC.VCLUI.Wait;
+  API_MVC;
+  //API_MVC_DB,
+  //API_ORM_VCLBind,
+  //FireDAC.VCLUI.Wait;
 
 type
-  TViewVCLBase = class(TORMBindedForm, IViewAbstract)
+  TViewVCLBase = class(TForm, IViewAbstract)
   private
     { Private declarations }
+    FController: TControllerAbstract;
+    FDoNotFreeAfterClose: Boolean;
+    FIsMainView: Boolean;
     FOnViewMessage: TViewMessageProc;
     procedure FormFree(Sender: TObject; var Action: TCloseAction);
   protected
-    FController: TControllerAbstract;
     FControllerClass: TControllerClass;
-    FDoNotFreeAfterClose: Boolean;
-    FIsMainView: Boolean;
-    procedure InitView; virtual; abstract;
+    /// <summary>
+    /// Override this procedure for assign FControllerClass in the main Application View(Form).
+    /// </summary>
+    procedure InitMVC; virtual;
     procedure SendMessage(aMsg: string);
   public
     { Public declarations }
@@ -30,37 +33,31 @@ type
     property OnViewMessage: TViewMessageProc read FOnViewMessage write FOnViewMessage;
   end;
 
-  TViewVCLClass = class of TViewVCLBase;
-
-  TControllerVCLBase = class(TControllerDB)
+  TControllerVCLBase = class(TControllerAbstract)
   protected
-    procedure CreateView<T: TViewVCLBase>(aInstantShow: Boolean = False);
+    function CreateView<T: TViewVCLBase>(aInstantShow: Boolean = False): T;
   end;
-
-var
-  ViewVCLBase: TViewVCLBase;
 
 implementation
 
 {$R *.dfm}
+
+procedure TViewVCLBase.InitMVC;
+begin
+end;
 
 procedure TViewVCLBase.FormFree(Sender: TObject; var Action: TCloseAction);
 begin
   Action := caFree;
 end;
 
-procedure TControllerVCLBase.CreateView<T>(aInstantShow: Boolean = False);
-var
-  View: TViewVCLBase;
-  ViewVCLClass: TViewVCLClass;
+function TControllerVCLBase.CreateView<T>(aInstantShow: Boolean = False): T;
 begin
-  ViewVCLClass := T;
-
-  View := ViewVCLClass.Create(nil);
-  View.OnViewMessage := ProcessMessage;
+  Result := T.Create(nil);
+  Result.OnViewMessage := ProcessMessage;
 
   if aInstantShow then
-    View.Show;
+    Result.Show;
 end;
 
 destructor TViewVCLBase.Destroy;
@@ -77,7 +74,7 @@ constructor TViewVCLBase.Create(AOwner: TComponent);
 begin
   inherited;
 
-  InitView;
+  InitMVC;
 
   if Assigned(FControllerClass) and not Assigned(FController) then
     begin
@@ -85,6 +82,11 @@ begin
       FController := FControllerClass.Create;
       FOnViewMessage := FController.ProcessMessage;
     end;
+
+  if not Assigned(FControllerClass) and
+     not Assigned(FController)
+  then
+    Raise Exception.Create('FControllerClass isn`t assigned in the first View(Form)');
 
   if not FDoNotFreeAfterClose then
     OnClose := FormFree;

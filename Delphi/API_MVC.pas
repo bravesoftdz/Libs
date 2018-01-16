@@ -20,7 +20,7 @@ type
   TModelClass = class of TModelAbstract;
 
   IViewAbstract = interface
-    procedure InitView;
+    procedure InitMVC;
     procedure SendMessage(aMsg: string);
   end;
 

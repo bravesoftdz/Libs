@@ -6,3 +6,8 @@
 /DelphiVendors/DCEF4/demos/MiniBrowser/*.identcache
 /DelphiVendors/DCEF4/demos/MiniBrowser/*.res
 /DelphiVendors/DCEF4/demos/MiniBrowser/*.stat
+/DelphiTemplates/VCL_MVC/Debug
+/DelphiTemplates/VCL_MVC_DB/Debug
+/DelphiTemplates/VCL_MVC_ORM/Debug
+/DelphiTemplates/VCL_MVC/Source/__history
+/DelphiTemplates/VCL_MVC_ORM/Source/__history
