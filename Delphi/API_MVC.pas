@@ -12,9 +12,14 @@ type
     procedure Execute(Sender: TObject);
   protected
     FDataObj: TObjectDictionary<string, TObject>;
+    FDataPointer: TDictionary<string, Pointer>;
   public
+    /// <summary>
+    /// Override this procedure as point of enter to Model work.
+    /// </summary>
     procedure Start; virtual; abstract;
-    constructor Create(aDataObj: TObjectDictionary<string, TObject> = nil);
+    constructor Create(aDataObj: TObjectDictionary<string, TObject>;
+      aDataPointer: TDictionary<string, Pointer>);
   end;
 
   TModelClass = class of TModelAbstract;
@@ -38,6 +43,7 @@ type
     FTaskDataArr: TArray<TTaskData>;
   protected
     FDataObj: TObjectDictionary<string, TObject>;
+    FDataPointer: TDictionary<string, Pointer>;
     procedure CallModel<T: TModelAbstract>(aThreadCount: Integer = 1);
     procedure PerfomMessage(aMsg: string); virtual;
   public
@@ -51,9 +57,11 @@ type
 
 implementation
 
-constructor TModelAbstract.Create(aDataObj: TObjectDictionary<string, TObject> = nil);
+constructor TModelAbstract.Create(aDataObj: TObjectDictionary<string, TObject>;
+  aDataPointer: TDictionary<string, Pointer>);
 begin
   FDataObj := aDataObj;
+  FDataPointer := aDataPointer;
 end;
 
 procedure TModelAbstract.Execute(Sender: TObject);
@@ -73,7 +81,7 @@ begin
   for i := 1 to aThreadCount do
     begin
       ModelClass := T;
-      Model := ModelClass.Create(FDataObj);
+      Model := ModelClass.Create(FDataObj, FDataPointer);
 
       Task := TTask.Create(Self, Model.Execute);
       Task.Start;
@@ -88,6 +96,7 @@ end;
 destructor TControllerAbstract.Destroy;
 begin
   FDataObj.Free;
+  FDataPointer.Free;
 
   inherited;
 end;
@@ -112,6 +121,7 @@ end;
 constructor TControllerAbstract.Create;
 begin
   FDataObj := TObjectDictionary<string, TObject>.Create([]);
+  FDataPointer := TDictionary<string, Pointer>.Create;
 end;
 
 end.

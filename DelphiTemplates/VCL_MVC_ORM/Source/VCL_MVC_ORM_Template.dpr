@@ -8,8 +8,7 @@ uses
   cController in 'cController.pas',
   API_MVC_DB in '..\..\..\Delphi\API_MVC_DB.pas',
   API_DB in '..\..\..\Delphi\API_DB.pas',
-  API_MVC_VCLDB in '..\..\..\Delphi\API_MVC_VCLDB.pas',
-  API_DB_MySQL in '..\..\..\Delphi\API_DB_MySQL.pas';
+  API_MVC_VCLDB in '..\..\..\Delphi\API_MVC_VCLDB.pas';
 
 {$R *.res}
 

@@ -13,10 +13,6 @@ type
 
 implementation
 
-uses
-  API_DB_MySQL,
-  System.SysUtils;
-
 procedure TController.InitDB;
 begin
 // Assign FDBEngineClass and set FConnectParams here.
@@ -24,10 +20,6 @@ begin
 //  FDBEngineClass := TSQLiteEngine;
 //  FConnectOnCreate := True;
 //  FConnectParams.DataBase := GetCurrentDir + '\DB\local.db';
-
-  FDBEngineClass := TMySQLEngine;
-  FConnectOnCreate := True;
-  FConnectParams.GetFormFile(GetCurrentDir + '\Settings\MySQL.ini');
 end;
 
 end.

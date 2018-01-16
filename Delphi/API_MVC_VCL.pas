@@ -6,9 +6,6 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
   API_MVC;
-  //API_MVC_DB,
-  //API_ORM_VCLBind,
-  //FireDAC.VCLUI.Wait;
 
 type
   TViewVCLBase = class(TForm, IViewAbstract)
@@ -33,14 +30,45 @@ type
     property OnViewMessage: TViewMessageProc read FOnViewMessage write FOnViewMessage;
   end;
 
-  TControllerVCLBase = class(TControllerAbstract)
-  protected
+  TVCLSupport = class
+  private
+    FController: TControllerAbstract;
+  public
     function CreateView<T: TViewVCLBase>(aInstantShow: Boolean = False): T;
+    constructor Create(aController: TControllerAbstract);
+  end;
+
+  TControllerVCLBase = class(TControllerAbstract)
+  private
+    FVCL: TVCLSupport;
+  public
+    constructor Create; override;
+    destructor Destroy; override;
+    property VCL: TVCLSupport read FVCL;
   end;
 
 implementation
 
 {$R *.dfm}
+
+destructor TControllerVCLBase.Destroy;
+begin
+  FVCL.Free;
+
+  inherited;
+end;
+
+constructor TControllerVCLBase.Create;
+begin
+  inherited;
+
+  FVCL := TVCLSupport.Create(Self);
+end;
+
+constructor TVCLSupport.Create(aController: TControllerAbstract);
+begin
+  FController := aController;
+end;
 
 procedure TViewVCLBase.InitMVC;
 begin
@@ -51,10 +79,10 @@ begin
   Action := caFree;
 end;
 
-function TControllerVCLBase.CreateView<T>(aInstantShow: Boolean = False): T;
+function TVCLSupport.CreateView<T>(aInstantShow: Boolean = False): T;
 begin
   Result := T.Create(nil);
-  Result.OnViewMessage := ProcessMessage;
+  Result.OnViewMessage := FController.ProcessMessage;
 
   if aInstantShow then
     Result.Show;
@@ -82,11 +110,6 @@ begin
       FController := FControllerClass.Create;
       FOnViewMessage := FController.ProcessMessage;
     end;
-
-  if not Assigned(FControllerClass) and
-     not Assigned(FController)
-  then
-    Raise Exception.Create('FControllerClass isn`t assigned in the first View(Form)');
 
   if not FDoNotFreeAfterClose then
     OnClose := FormFree;
