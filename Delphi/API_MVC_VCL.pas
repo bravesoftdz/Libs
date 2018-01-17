@@ -27,7 +27,6 @@ type
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    property OnViewMessage: TViewMessageProc read FOnViewMessage write FOnViewMessage;
   end;
 
   TVCLSupport = class
@@ -82,7 +81,7 @@ end;
 function TVCLSupport.CreateView<T>(aInstantShow: Boolean = False): T;
 begin
   Result := T.Create(nil);
-  Result.OnViewMessage := FController.ProcessMessage;
+  Result.FOnViewMessage := FController.ProcessMessage;
 
   if aInstantShow then
     Result.Show;
