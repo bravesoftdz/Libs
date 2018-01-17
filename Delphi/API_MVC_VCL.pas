@@ -27,6 +27,7 @@ type
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    property OnViewMessage: TViewMessageProc read FOnViewMessage write FOnViewMessage;
   end;
 
   TVCLSupport = class
@@ -81,7 +82,7 @@ end;
 function TVCLSupport.CreateView<T>(aInstantShow: Boolean = False): T;
 begin
   Result := T.Create(nil);
-  Result.FOnViewMessage := FController.ProcessMessage;
+  Result.OnViewMessage := FController.ViewListener;
 
   if aInstantShow then
     Result.Show;
@@ -107,7 +108,7 @@ begin
     begin
       FIsMainView := True;
       FController := FControllerClass.Create;
-      FOnViewMessage := FController.ProcessMessage;
+      FOnViewMessage := FController.ViewListener;
     end;
 
   if not FDoNotFreeAfterClose then

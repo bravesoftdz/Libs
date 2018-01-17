@@ -20,15 +20,13 @@ type
     procedure Execute(Sender: TObject);
   protected
     FDataObj: TObjectDictionary<string, TObject>;
-    FDataPointer: TDictionary<string, Pointer>;
     procedure SendMessage(aMsg: string);
   public
     /// <summary>
     /// Override this procedure as point of enter to Model work.
     /// </summary>
     procedure Start; virtual; abstract;
-    constructor Create(aDataObj: TObjectDictionary<string, TObject>;
-      aDataPointer: TDictionary<string, Pointer>);
+    constructor Create(aDataObj: TObjectDictionary<string, TObject>);
   end;
 
   TModelClass = class of TModelAbstract;
@@ -47,17 +45,18 @@ type
   TControllerAbstract = class abstract
   private
     FTaskDataArr: TArray<TTaskData>;
+    procedure DoViewListener(const aMsg: string);
     procedure ModelListener(const aMsg: string; aModel: TModelAbstract);
-    procedure ModelInit<T: TModelAbstract>(aModel: T);
+    procedure ModelInit(aModel: TModelAbstract);
+    function GetViewListener: TViewMessageProc;
   protected
     FDataObj: TObjectDictionary<string, TObject>;
-    FDataPointer: TDictionary<string, Pointer>;
     procedure CallModel<T: TModelAbstract>(aThreadCount: Integer = 1);
-    procedure PerfomMessage(const aMsg: string); virtual;
+    procedure PerfomViewMessage(const aMsg: string); virtual;
   public
-    procedure ProcessMessage(const aMsg: string);
     constructor Create; virtual;
     destructor Destroy; override;
+    property ViewListener: TViewMessageProc read GetViewListener;
   end;
 {$M-}
 
@@ -68,7 +67,12 @@ implementation
 uses
   System.SysUtils;
 
-procedure TControllerAbstract.ModelInit<T>(aModel: T);
+function TControllerAbstract.GetViewListener: TViewMessageProc;
+begin
+  Result := DoViewListener;
+end;
+
+procedure TControllerAbstract.ModelInit(aModel: TModelAbstract);
 var
   ModelInitProc: TModelInitProc;
   ModelInitProcName: string;
@@ -98,11 +102,9 @@ begin
     ModelMessageProc(aMsg, aModel);
 end;
 
-constructor TModelAbstract.Create(aDataObj: TObjectDictionary<string, TObject>;
-  aDataPointer: TDictionary<string, Pointer>);
+constructor TModelAbstract.Create(aDataObj: TObjectDictionary<string, TObject>);
 begin
   FDataObj := aDataObj;
-  FDataPointer := aDataPointer;
 end;
 
 procedure TModelAbstract.Execute(Sender: TObject);
@@ -123,34 +125,34 @@ begin
   for i := 1 to aThreadCount do
     begin
       ModelClass := T;
-      Model := ModelClass.Create(FDataObj, FDataPointer);
+      Model := ModelClass.Create(FDataObj);
       Model.FOnModelMessage := ModelListener;
 
-      ModelInit<T>(Model);
+      ModelInit(Model);
 
       Task := TTask.Create(Self, Model.Execute);
-      Task.Start;
 
       TaskData.Task := Task;
       TaskData.Model := Model;
 
       FTaskDataArr := FTaskDataArr + [TaskData];
+
+      Task.Start;
     end;
 end;
 
 destructor TControllerAbstract.Destroy;
 begin
   FDataObj.Free;
-  FDataPointer.Free;
 
   inherited;
 end;
 
-procedure TControllerAbstract.PerfomMessage(const aMsg: string);
+procedure TControllerAbstract.PerfomViewMessage(const aMsg: string);
 begin
 end;
 
-procedure TControllerAbstract.ProcessMessage(const aMsg: string);
+procedure TControllerAbstract.DoViewListener(const aMsg: string);
 var
   ControllerProc: TProc;
 begin
@@ -160,13 +162,12 @@ begin
   if Assigned(ControllerProc) then
     ControllerProc
   else
-    PerfomMessage(aMsg);
+    PerfomViewMessage(aMsg);
 end;
 
 constructor TControllerAbstract.Create;
 begin
   FDataObj := TObjectDictionary<string, TObject>.Create([]);
-  FDataPointer := TDictionary<string, Pointer>.Create;
 end;
 
 end.

@@ -11,7 +11,7 @@ type
     FileName: string;
     FullPath: string;
     Name: string;
-    procedure GetFromPath(aPath: string);
+    procedure LoadFromFile(aPath: string);
   end;
 
   TFilesEngine = class
@@ -26,7 +26,7 @@ uses
   System.SysUtils,
   System.Types;
 
-procedure TFileInfo.GetFromPath(aPath: string);
+procedure TFileInfo.LoadFromFile(aPath: string);
 var
   i: Integer;
   PathWords: TArray<string>;
@@ -72,7 +72,7 @@ begin
 
   for i := 0 to Length(Files) - 1 do
     begin
-      FileInfo.GetFromPath(Files[i]);
+      FileInfo.LoadFromFile(Files[i]);
 
       Result := Result + [FileInfo];
     end;
