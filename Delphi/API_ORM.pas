@@ -9,7 +9,7 @@ uses
   FireDAC.Comp.Client,
   FireDAC.Stan.Param,
   System.Generics.Collections,
-  System.TypInfo;
+  //System.TypInfo;
 
 type
   TEntityAbstract = class;
@@ -40,6 +40,7 @@ type
     Value: Variant;
   end;
 
+  TObjProc = procedure of object;
   TEachJoinEntProp = procedure(aJoinEntity: TEntityAbstract; aEntityClass: TEntityClass;
    aEntityPropName, aFieldName, aReferFieldName: string) of object;
 
@@ -145,8 +146,6 @@ type
     constructor Create(aOwnerEntity: TEntityAbstract; aOrderArr: TArray<string>); overload;
     destructor Destroy; override;
   end;
-
-  TObjProc = procedure of object;
 
 implementation
 
@@ -334,7 +333,6 @@ var
   Entity: TEntityAbstract;
   ForeignKey: TForeignKey;
   i: Integer;
-  ParentEntity: TEntityAbstract;
   PropCount: Integer;
   PropClass: TClass;
   PropList: PPropList;
@@ -482,7 +480,6 @@ var
   FilterArr: TArray<string>;
   ForeignKey: TForeignKey;
   ForeignKeyArr: TArray<TForeignKey>;
-  i: Integer;
   Proc: TObjProc;
 begin
   ForeignKeyArr := GetEntityClass.GetStructure.ForeignKeyArr;
