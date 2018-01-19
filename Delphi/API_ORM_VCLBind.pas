@@ -9,19 +9,19 @@ uses
   Vcl.Forms;
 
 type
-  TBind = record
-    Control: TObject;
+  TBindItem = record
+    Control: TComponent;
     Entity: TEntityAbstract;
     Index: Integer;
   end;
 
   TORMBind = class
   private
-    FBindArr: TArray<TBind>;
+    FBinditemArr: TArray<TBind>;
     function GetEntity(aControl: TObject): TEntityAbstract;
   public
-    procedure Add(aControl: TObject; aEntity: TEntityAbstract; aIndex: Integer = 0);
-    property Entity[aControl: TObject]: TEntityAbstract read GetEntity;
+    procedure Add(aControl: TControl; aEntity: TEntityAbstract; aIndex: Integer = 0);
+    property Entity[aControl: TControl]: TEntityAbstract read GetEntity;
   end;
 
   TORMBindedForm = class(TForm)

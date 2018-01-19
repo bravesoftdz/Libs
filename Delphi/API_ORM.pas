@@ -64,7 +64,7 @@ type
     function GetNormPropValue(aPropName: string): Variant;
     function GetPrimKeyFieldType(aFieldName: string): TFieldType;
     function GetProp(aPropName: string): Variant;
-    function GetSelectSQLString: string;
+    function GetSelectSQLString: string; virtual; 
     function GetUpdateSQLString: string;
     function GetWherePart: string; virtual;
     procedure AddProcToArr(var aProcArr: TArray<TMethod>; aCode, aData: Pointer);
@@ -92,6 +92,8 @@ type
     procedure UpdateToDB;
   protected
     FCryptEngine: TCryptEngine;
+    procedure AfterCreate; virtual;
+    procedure BeforeDelete; virtual;
   public
     class function GetStructure: TSructure; virtual; abstract;
     class function GetTableName: string;
@@ -103,11 +105,13 @@ type
     procedure Revert;
     procedure Store;
     procedure StoreAll;
+    constructor Create; overload;
     constructor Create(aDBEngine: TDBEngine; aInstanceArr: TArray<TInstance>); overload;
     constructor Create(aDBEngine: TDBEngine; aCryptEngine: TCryptEngine;
       aPKeyValueArr: TArray<Variant>); overload;
     constructor Create(aDBEngine: TDBEngine; aPKeyValueArr: TArray<Variant>); overload;
     destructor Destroy; override;
+    property IsNewInstance: Boolean; read FIsNewInstance;
     property Prop[aPropName: string]: Variant read GetProp write SetProp;
   end;
 {$M-}
@@ -152,6 +156,22 @@ implementation
 uses
   System.SysUtils,
   System.Variants;
+
+procedure TEntityORM.AfterCreate;
+begin
+end;
+
+procedure TEntityORM.BeforeDelete;
+begin
+end;
+
+constructor TEntityORM.Create;
+var
+  VariantArr: TVariantArr;
+begin
+  SetLength(VariantArr, 0);
+  Create(VariantArr);
+end;
 
 procedure TEntityAbstract.StoreJoinChildEnt(aJoinEntity: TEntityAbstract; aEntityClass: TEntityClass;
   aEntityPropName, aFieldName, aReferFieldName: string);
@@ -583,6 +603,8 @@ procedure TEntityAbstract.Delete;
 var
   SQL: string;
 begin
+  BeforeDelete;
+
   if not FIsNewInstance then
     begin
       SQL := GetDeleteSQLString;
@@ -603,7 +625,7 @@ begin
     for i := 0 to dsQuery.Params.Count - 1 do
       begin
         PropName := GetPropNameByFieldName(dsQuery.Params[i].Name);
-        FillParam(dsQuery.Params[i], Prop[PropName]);
+        FillParam(dsQuery.Params[i], GetNormPropValue(PropName));
       end;
 
     FDBEngine.ExecQuery(dsQuery);
@@ -798,6 +820,8 @@ begin
 
   FInstanceArr := aInstanceArr;
   AssignProps;
+
+  AfterCreate;
 end;
 
 class function TEntityAbstract.GetInstanceArr(aQuery: TFDQuery; aCryptEngine: TCryptEngine = nil): TArray<TInstance>;
@@ -999,6 +1023,8 @@ begin
       ReadInstance(aPKeyValueArr);
       AssignProps;
     end;
+
+  AfterCreate; 
 end;
 
 procedure TEntityList<T>.FillListByInstances(aFilterArr, aOrderArr: TArray<string>);
