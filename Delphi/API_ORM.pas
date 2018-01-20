@@ -8,8 +8,7 @@ uses
   Data.DB,
   FireDAC.Comp.Client,
   FireDAC.Stan.Param,
-  System.Generics.Collections,
-  //System.TypInfo;
+  System.Generics.Collections;
 
 type
   TEntityAbstract = class;
@@ -75,7 +74,7 @@ type
       aEntityPropName, aFieldName, aReferFieldName: string);
     procedure ExecProcArr(aProcArr: TArray<TMethod>);
     procedure ExecToDB(aSQL: string);
-    procedure FillParam(aParam: TFDParam; aValue: Variant);
+    procedure FillParam(aParam: TFDParam; aFieldName: string; aValue: Variant);
     procedure ForEachJoinChildProp(aEachJoinEntProp: TEachJoinEntProp);
     procedure ForEachJoinParentProp(aEachJoinEntProp: TEachJoinEntProp);
     procedure FreeJoinEntity(aJoinEntity: TEntityAbstract; aEntityClass: TEntityClass;
@@ -105,13 +104,13 @@ type
     procedure Revert;
     procedure Store;
     procedure StoreAll;
-    constructor Create; overload;
+    constructor Create(aDBEngine: TDBEngine); overload;
     constructor Create(aDBEngine: TDBEngine; aInstanceArr: TArray<TInstance>); overload;
     constructor Create(aDBEngine: TDBEngine; aCryptEngine: TCryptEngine;
       aPKeyValueArr: TArray<Variant>); overload;
     constructor Create(aDBEngine: TDBEngine; aPKeyValueArr: TArray<Variant>); overload;
     destructor Destroy; override;
-    property IsNewInstance: Boolean; read FIsNewInstance;
+    property IsNewInstance: Boolean read FIsNewInstance;
     property Prop[aPropName: string]: Variant read GetProp write SetProp;
   end;
 {$M-}
@@ -155,22 +154,24 @@ implementation
 
 uses
   System.SysUtils,
+  System.TypInfo,
   System.Variants;
 
-procedure TEntityORM.AfterCreate;
+procedure TEntityAbstract.AfterCreate;
 begin
 end;
 
-procedure TEntityORM.BeforeDelete;
+procedure TEntityAbstract.BeforeDelete;
 begin
 end;
 
-constructor TEntityORM.Create;
+constructor TEntityAbstract.Create(aDBEngine: TDBEngine);
 var
-  VariantArr: TVariantArr;
+  VarArr: TArray<Variant>;
 begin
-  SetLength(VariantArr, 0);
-  Create(VariantArr);
+  VarArr := [];
+
+  Create(aDBEngine, VarArr);
 end;
 
 procedure TEntityAbstract.StoreJoinChildEnt(aJoinEntity: TEntityAbstract; aEntityClass: TEntityClass;
@@ -616,6 +617,9 @@ procedure TEntityAbstract.ExecToDB(aSQL: string);
 var
   dsQuery: TFDQuery;
   i: Integer;
+  FieldName: string;
+  ParamName: string;
+  ParamValue: Variant;
   PropName: string;
 begin
   dsQuery := TFDQuery.Create(nil);
@@ -624,8 +628,21 @@ begin
 
     for i := 0 to dsQuery.Params.Count - 1 do
       begin
-        PropName := GetPropNameByFieldName(dsQuery.Params[i].Name);
-        FillParam(dsQuery.Params[i], GetNormPropValue(PropName));
+        ParamName := dsQuery.Params[i].Name;
+
+        if ParamName.StartsWith('OLD_') then
+          begin
+            FieldName := FieldName.Substring(5);
+            ParamValue := GetInstanceValue(FieldName);
+          end
+        else
+          begin
+            FieldName := ParamName;
+            PropName := GetPropNameByFieldName(FieldName);
+            ParamValue := GetNormPropValue(PropName);
+          end;
+
+        FillParam(dsQuery.Params[i], FieldName, ParamValue);
       end;
 
     FDBEngine.ExecQuery(dsQuery);
@@ -645,7 +662,7 @@ begin
     begin
       if i > 0 then
         Result := Result + ' and ';
-      Result := Result + Format('%s = :%s', [KeyField.FieldName, KeyField.FieldName]);
+      Result := Result + Format('%s = :OLD_%s', [KeyField.FieldName, KeyField.FieldName]);
       Inc(i);
     end;
 end;
@@ -899,7 +916,7 @@ end;
 
 function TEntityFeatID.GetWherePart: string;
 begin
-  Result := 'ID = :ID';
+  Result := 'ID = :OLD_ID';
 end;
 
 constructor TEntityFeatID.Create(aDBEngine: TDBEngine; aID: Integer = 0);
@@ -930,7 +947,7 @@ begin
       Exit(KeyField.FieldType);
 end;
 
-procedure TEntityAbstract.FillParam(aParam: TFDParam; aValue: Variant);
+procedure TEntityAbstract.FillParam(aParam: TFDParam; aFieldName: string; aValue: Variant);
 var
   FieldType: TFieldType;
 begin
@@ -990,6 +1007,7 @@ end;
 procedure TEntityAbstract.ReadInstance(aPKeyValueArr: TArray<Variant>);
 var
   dsQuery: TFDQuery;
+  FieldName: string;
   i: Integer;
   SQL: string;
 begin
@@ -1003,7 +1021,10 @@ begin
     dsQuery.SQL.Text := SQL;
 
     for i := 0 to dsQuery.Params.Count - 1 do
-      FillParam(dsQuery.Params[i], aPKeyValueArr[i]);
+      begin
+        FieldName := dsQuery.Params[i].Name.Substring(5);
+        FillParam(dsQuery.Params[i], FieldName, aPKeyValueArr[i]);
+      end;
 
     FDBEngine.OpenQuery(dsQuery);
 

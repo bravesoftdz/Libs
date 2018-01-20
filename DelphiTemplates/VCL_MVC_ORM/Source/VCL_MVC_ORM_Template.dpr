@@ -8,7 +8,9 @@ uses
   cController in 'cController.pas',
   API_MVC_DB in '..\..\..\Delphi\API_MVC_DB.pas',
   API_DB in '..\..\..\Delphi\API_DB.pas',
-  API_MVC_VCLDB in '..\..\..\Delphi\API_MVC_VCLDB.pas';
+  API_MVC_VCLDB in '..\..\..\Delphi\API_MVC_VCLDB.pas',
+  API_ORM in '..\..\..\Delphi\API_ORM.pas',
+  API_Crypt in '..\..\..\Delphi\API_Crypt.pas';
 
 {$R *.res}
 
