@@ -8,8 +8,12 @@ uses
 
 type
   TModelAbstract = class;
+  TModelClass = class of TModelAbstract;
 
-  TProc = procedure of object;
+  TControllerAbstract = class;
+  TControllerClass = class of TControllerAbstract;
+
+  TObjProc = procedure of object;
   TViewMessageProc = procedure(const aMsg: string) of object;
   TModelMessageProc = procedure(const aMsg: string; aModel: TModelAbstract) of object;
   TModelInitProc = procedure(aModel: TModelAbstract) of object;
@@ -29,10 +33,8 @@ type
     constructor Create(aDataObj: TObjectDictionary<string, TObject>);
   end;
 
-  TModelClass = class of TModelAbstract;
-
   IViewAbstract = interface
-    procedure InitMVC;
+    procedure InitMVC(var aControllerClass: TControllerClass);
     procedure SendMessage(aMsg: string);
   end;
 
@@ -59,8 +61,6 @@ type
     property ViewListener: TViewMessageProc read GetViewListener;
   end;
 {$M-}
-
-  TControllerClass = class of TControllerAbstract;
 
 implementation
 
@@ -154,7 +154,7 @@ end;
 
 procedure TControllerAbstract.DoViewListener(const aMsg: string);
 var
-  ControllerProc: TProc;
+  ControllerProc: TObjProc;
 begin
   TMethod(ControllerProc).Code := Self.MethodAddress(aMsg);
   TMethod(ControllerProc).Data := Self;

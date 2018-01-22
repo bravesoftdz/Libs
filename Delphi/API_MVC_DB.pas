@@ -19,10 +19,12 @@ type
     //FCryptEngineClass: TCryptEngineClass;
     //FCryptParams: TCryptParams;
     FDBEngineClass: TDBEngineClass;
+    procedure AfterCreate; virtual;
     /// <summary>
     /// Override this procedure for assign FDBEngineClass and set FConnectParams.
     /// </summary>
-    procedure InitDB; virtual; abstract;
+    procedure InitDB(var aDBEngineClass: TDBEngineClass; out aConnectParams: TConnectParams;
+      out aConnectOnCreate: Boolean); virtual; abstract;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -34,6 +36,10 @@ implementation
 
 uses
   System.SysUtils;
+
+procedure TControllerDB.AfterCreate;
+begin
+end;
 
 destructor TControllerDB.Destroy;
 begin
@@ -53,7 +59,7 @@ begin
   inherited;
 
   try
-    InitDB;
+    InitDB(FDBEngineClass, FConnectParams, FConnectOnCreate);
   except
     on e:EAbstractError do
       raise Exception.Create('Necessary procedure InitDB of Controller is absent!');
@@ -69,6 +75,8 @@ begin
 
   //if Assigned(FCryptEngineClass) then
   //  FCryptEngine := FCryptEngineClass.Create(FCryptParams);
+
+  AfterCreate;
 end;
 
 end.

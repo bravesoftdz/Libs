@@ -21,7 +21,7 @@ type
     /// <summary>
     /// Override this procedure for assign FControllerClass in the main Application View(Form).
     /// </summary>
-    procedure InitMVC; virtual;
+    procedure InitMVC(var aControllerClass: TControllerClass); virtual;
     procedure SendMessage(aMsg: string);
   public
     { Public declarations }
@@ -70,7 +70,7 @@ begin
   FController := aController;
 end;
 
-procedure TViewVCLBase.InitMVC;
+procedure TViewVCLBase.InitMVC(var aControllerClass: TControllerClass);
 begin
 end;
 
@@ -102,7 +102,7 @@ constructor TViewVCLBase.Create(AOwner: TComponent);
 begin
   inherited;
 
-  InitMVC;
+  InitMVC(FControllerClass);
 
   if Assigned(FControllerClass) and not Assigned(FController) then
     begin
