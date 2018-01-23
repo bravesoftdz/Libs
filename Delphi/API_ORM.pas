@@ -126,7 +126,7 @@ type
     property ID: Integer read FID write FID;
   end;
 
-  TEntityList<T: TEntityAbstract> = class abstract(TObjectList<T>)
+  TEntityAbstractList<T: TEntityAbstract> = class(TObjectList<T>)
   private
     FDBEngine: TDBEngine;
     FForeignKeyArr: TArray<TForeignKey>;
@@ -148,6 +148,7 @@ type
     constructor Create(aOwnerEntity: TEntityAbstract); overload;
     constructor Create(aOwnerEntity: TEntityAbstract; aOrderArr: TArray<string>); overload;
     destructor Destroy; override;
+    property DBEngine: TDBEngine read FDBEngine;
   end;
 
 implementation
@@ -394,7 +395,7 @@ begin
   ForEachJoinChildProp(CreateJoinEntity);
 end;
 
-procedure TEntityList<T>.Clear;
+procedure TEntityAbstractList<T>.Clear;
 var
   Entity: T;
   EntityArr: TArray<T>;
@@ -405,7 +406,7 @@ begin
     Self.Remove(Entity);
 end;
 
-procedure TEntityList<T>.CleanRecycleBin;
+procedure TEntityAbstractList<T>.CleanRecycleBin;
 var
   Entity: T;
 begin
@@ -413,7 +414,7 @@ begin
     Entity.Delete;
 end;
 
-destructor TEntityList<T>.Destroy;
+destructor TEntityAbstractList<T>.Destroy;
 var
   Entity: T;
 begin
@@ -423,18 +424,18 @@ begin
   inherited;
 end;
 
-procedure TEntityList<T>.Delete(const aIndex: Integer);
+procedure TEntityAbstractList<T>.Delete(const aIndex: Integer);
 begin
   Remove(aIndex);
 end;
 
-procedure TEntityList<T>.Remove(const aEntity: T);
+procedure TEntityAbstractList<T>.Remove(const aEntity: T);
 begin
   Extract(aEntity);
   FRecycleBin := FRecycleBin + [aEntity];
 end;
 
-procedure TEntityList<T>.Remove(const aIndex: Integer);
+procedure TEntityAbstractList<T>.Remove(const aIndex: Integer);
 var
   Entity: T;
 begin
@@ -442,7 +443,7 @@ begin
   Remove(Entity);
 end;
 
-procedure TEntityList<T>.Store;
+procedure TEntityAbstractList<T>.Store;
 var
   Entity: T;
   ForeignKey: TForeignKey;
@@ -495,7 +496,7 @@ begin
   inherited;
 end;
 
-constructor TEntityList<T>.Create(aOwnerEntity: TEntityAbstract; aOrderArr: TArray<string>);
+constructor TEntityAbstractList<T>.Create(aOwnerEntity: TEntityAbstract; aOrderArr: TArray<string>);
 var
   Filter: string;
   FilterArr: TArray<string>;
@@ -535,7 +536,7 @@ begin
     end;
 end;
 
-constructor TEntityList<T>.Create(aOwnerEntity: TEntityAbstract);
+constructor TEntityAbstractList<T>.Create(aOwnerEntity: TEntityAbstract);
 var
   OrderArr: TArray<string>;
 begin
@@ -879,12 +880,12 @@ begin
     end;
 end;
 
-class function TEntityList<T>.GetEntityClass: TEntityClass;
+class function TEntityAbstractList<T>.GetEntityClass: TEntityClass;
 begin
   Result := T;
 end;
 
-function TEntityList<T>.GetSelectSQLString(aFilterArr, aOrderArr: TArray<string>): string;
+function TEntityAbstractList<T>.GetSelectSQLString(aFilterArr, aOrderArr: TArray<string>): string;
 var
   FromPart: string;
   i: Integer;
@@ -893,10 +894,14 @@ var
 begin
   FromPart := GetEntityClass.GetTableName;
 
-  WherePart := '1 = 1';
   for i := 0 to Length(aFilterArr) - 1 do
     begin
-      WherePart := WherePart + ' and ';
+      if aFilterArr[i] = '*' then
+        aFilterArr[i] := '1 = 1';
+
+      if i > 0 then
+        WherePart := WherePart + ' and ';
+
       WherePart := WherePart + aFilterArr[i];
     end;
 
@@ -905,8 +910,10 @@ begin
     begin
       if i > 0 then
         OrderPart := OrderPart + ', ';
+
       OrderPart := OrderPart + aOrderArr[i];
     end;
+
   if not OrderPart.IsEmpty then
     OrderPart := 'order by ' + OrderPart;
 
@@ -1048,7 +1055,7 @@ begin
   AfterCreate; 
 end;
 
-procedure TEntityList<T>.FillListByInstances(aFilterArr, aOrderArr: TArray<string>);
+procedure TEntityAbstractList<T>.FillListByInstances(aFilterArr, aOrderArr: TArray<string>);
 var
   dsQuery: TFDQuery;
   Entity: TEntityAbstract;
@@ -1077,12 +1084,14 @@ begin
   end;
 end;
 
-constructor TEntityList<T>.Create(aDBEngine: TDBEngine; aFilterArr, aOrderArr: TArray<string>);
+constructor TEntityAbstractList<T>.Create(aDBEngine: TDBEngine; aFilterArr, aOrderArr: TArray<string>);
 begin
   inherited Create(True);
 
   FDBEngine := aDBEngine;
-  FillListByInstances(aFilterArr, aOrderArr);
+
+  if Length(aFilterArr) > 0 then
+    FillListByInstances(aFilterArr, aOrderArr);
 end;
 
 end.
