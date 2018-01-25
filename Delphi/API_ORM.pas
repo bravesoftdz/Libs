@@ -633,7 +633,7 @@ begin
 
         if ParamName.StartsWith('OLD_') then
           begin
-            FieldName := FieldName.Substring(5);
+            FieldName := ParamName.Substring(4);
             ParamValue := GetInstanceValue(FieldName);
           end
         else
