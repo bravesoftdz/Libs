@@ -18,6 +18,9 @@ type
   TModelMessageProc = procedure(const aMsg: string; aModel: TModelAbstract) of object;
   TModelInitProc = procedure(aModel: TModelAbstract) of object;
 
+  /// <summary>
+  /// inheritor class name have to contain verb f.e. TModelDoSomething
+  /// </summary>
   TModelAbstract = class abstract
   private
     FOnModelMessage: TModelMessageProc;
