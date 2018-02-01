@@ -94,20 +94,21 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="..\..\..\Delphi\API_MVC_VCL.pas">
-            <Form>ViewVCLBase</Form>
-        </DCCReference>
         <DCCReference Include="vMain.pas">
             <Form>ViewMain</Form>
             <FormType>dfm</FormType>
         </DCCReference>
-        <DCCReference Include="..\..\..\Delphi\API_MVC.pas"/>
         <DCCReference Include="cController.pas"/>
         <DCCReference Include="..\..\..\Delphi\API_MVC_DB.pas"/>
         <DCCReference Include="..\..\..\Delphi\API_DB.pas"/>
         <DCCReference Include="..\..\..\Delphi\API_MVC_VCLDB.pas"/>
         <DCCReference Include="..\..\..\Delphi\API_ORM.pas"/>
         <DCCReference Include="..\..\..\Delphi\API_Crypt.pas"/>
+        <DCCReference Include="..\..\..\Delphi\API_MVC_VCL.pas">
+            <Form>ViewVCLBase</Form>
+        </DCCReference>
+        <DCCReference Include="..\..\..\Delphi\API_MVC.pas"/>
+        <DCCReference Include="eCommon.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

@@ -33,7 +33,7 @@ type
     /// Override this procedure as point of enter to Model work.
     /// </summary>
     procedure Start; virtual; abstract;
-    constructor Create(aDataObj: TObjectDictionary<string, TObject>);
+    constructor Create(aDataObj: TObjectDictionary<string, TObject>); virtual;
   end;
 
   IViewAbstract = interface

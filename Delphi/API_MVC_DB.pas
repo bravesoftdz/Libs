@@ -5,9 +5,17 @@ interface
 uses
   //API_Crypt,
   API_DB,
-  API_MVC;
+  API_MVC,
+  System.Generics.Collections;
 
 type
+  TModelDB = class abstract(TModelAbstract)
+  protected
+    FDBEngine: TDBEngine;
+  public
+    constructor Create(aDataObj: TObjectDictionary<string, TObject>); override;
+  end;
+
   TControllerDB = class abstract(TControllerAbstract)
   private
     //FCryptEngine: TCryptEngine;
@@ -20,6 +28,8 @@ type
     //FCryptParams: TCryptParams;
     FDBEngineClass: TDBEngineClass;
     procedure AfterCreate; virtual;
+    procedure BeforeDestroy; virtual;
+    procedure CallModel<T: TModelAbstract>(aThreadCount: Integer = 1);
     /// <summary>
     /// Override this procedure for assign FDBEngineClass and set FConnectParams.
     /// </summary>
@@ -37,13 +47,36 @@ implementation
 uses
   System.SysUtils;
 
+procedure TControllerDB.CallModel<T>(aThreadCount: Integer = 1);
+begin
+  FDataObj.AddOrSetValue('DBEngine', FDBEngine);
+
+  inherited CallModel<T>(aThreadCount);
+end;
+
+constructor TModelDB.Create(aDataObj: TObjectDictionary<string, TObject>);
+begin
+  inherited;
+
+  FDBEngine := aDataObj.Items['DBEngine'] as TDBEngine;
+end;
+
+procedure TControllerDB.BeforeDestroy;
+begin
+end;
+
 procedure TControllerDB.AfterCreate;
 begin
 end;
 
 destructor TControllerDB.Destroy;
 begin
+  BeforeDestroy;
+
+  if FDBEngine.IsConnected then
+    FDBEngine.CloseConnection;
   FDBEngine.Free;
+
   //if Assigned(FCryptEngine) then FCryptEngine.Free;
 
   inherited;

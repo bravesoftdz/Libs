@@ -17,6 +17,7 @@ type
   TFilesEngine = class
   public
     class function GetFileInfoArr(const aPath: string): TArray<TFileInfo>;
+    class function GetTextFromFile(const aPath: String): String;
   end;
 
 implementation
@@ -25,6 +26,11 @@ uses
   System.IOUtils,
   System.SysUtils,
   System.Types;
+
+class function TFilesEngine.GetTextFromFile(const aPath: String): String;
+begin
+  Result := TFile.ReadAllText(aPath);
+end;
 
 procedure TFileInfo.LoadFromFile(aPath: string);
 var

@@ -16,7 +16,7 @@ type
     Login: string;
     Password: string;
   public
-    procedure GetFormFile(aFileName: string);
+    procedure GetFromFile(aFileName: string);
   end;
 
   TDBEngine = class abstract
@@ -34,6 +34,7 @@ type
     procedure OpenQuery(aQuery: TFDQuery; aIsFetchAll: Boolean = True);
     constructor Create(aConnectParams: TConnectParams);
     destructor Destroy; override;
+    property IsConnected: Boolean read FIsConnected;
   end;
 
   TDBEngineClass = class of TDBEngine;
@@ -43,7 +44,7 @@ implementation
 uses
   System.Classes;
 
-procedure TConnectParams.GetFormFile(aFileName: string);
+procedure TConnectParams.GetFromFile(aFileName: string);
 var
   SL: TStringList;
 begin

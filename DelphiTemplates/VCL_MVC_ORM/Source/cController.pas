@@ -3,23 +3,36 @@ unit cController;
 interface
 
 uses
+  API_DB,
   API_MVC_VCLDB;
 
 type
   TController = class(TControllerVCLDB)
   private
-    procedure InitDB; override;
+    procedure InitDB(var aDBEngineClass: TDBEngineClass; out aConnectParams: TConnectParams;
+      out aConnectOnCreate: Boolean); override;
+  protected
+    procedure AfterCreate; override;
   end;
+
+var
+  DBEngine: TDBEngine;
 
 implementation
 
-procedure TController.InitDB;
+procedure TController.AfterCreate;
 begin
-// Assign FDBEngineClass and set FConnectParams here.
+  cController.DBEngine := Self.DBEngine;
+end;
+
+procedure TController.InitDB(var aDBEngineClass: TDBEngineClass; out aConnectParams: TConnectParams;
+      out aConnectOnCreate: Boolean);
+begin
+// Assign aDBEngineClass and set aConnectParams here.
 // For example:
-//  FDBEngineClass := TSQLiteEngine;
-//  FConnectOnCreate := True;
-//  FConnectParams.DataBase := GetCurrentDir + '\DB\local.db';
+//  aDBEngineClass := TSQLiteEngine;
+//  aConnectOnCreate := True;
+//  aConnectParams.DataBase := GetCurrentDir + '\DB\local.db';
 end;
 
 end.
