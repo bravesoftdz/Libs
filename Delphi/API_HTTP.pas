@@ -5,7 +5,8 @@ interface
 uses
   IdCookieManager,
   IdHTTP,
-  IdSSLOpenSSL;
+  IdSSLOpenSSL,
+  System.Classes;
 
 type
   THTTP = class
@@ -17,7 +18,8 @@ type
     procedure FreeHTTP;
     procedure InitHTTP;
   public
-    function Get(aURL: string): string;
+    function Get(const aURL: string): string;
+    function Post(const aURL: string; aPostData: TStringList): string;
     constructor Create(aEnabledCookies: Boolean = False);
     destructor Destroy; override;
   end;
@@ -26,6 +28,11 @@ implementation
 
 uses
   System.SysUtils;
+
+function THTTP.Post(const aURL: string; aPostData: TStringList): string;
+begin
+  Result := FIdHTTP.Post(aURL, aPostData);
+end;
 
 procedure THTTP.FreeHTTP;
 begin
@@ -39,7 +46,7 @@ begin
     FreeAndNil(FIdCookieManager);
 end;
 
-function THTTP.Get(aURL: string): string;
+function THTTP.Get(const aURL: string): string;
 begin
   Result := FIdHTTP.Get(aURL);
 end;

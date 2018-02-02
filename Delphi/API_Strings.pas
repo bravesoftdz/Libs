@@ -3,6 +3,10 @@ unit API_Strings;
 interface
 
 type
+  TStrTool = class
+    class function Reverse(const aStr: string): string;
+  end;
+
   TMyStr = type string;
 
   TMyStrHelper = record helper for TMyStr
@@ -10,14 +14,25 @@ type
     function CutByKey(aFirstKey: string; aLastKey: string; aFirstKeyNum: integer = 1): TMyStr;
     function CutHTMLTags: TMyStr;
 
-    procedure SaveToFile(FileName: String);
+    procedure SaveToFile(const aPath: string);
   end;
 
 implementation
 
 uses
+  API_Files,
   System.Classes,
   System.SysUtils;
+
+class function TStrTool.Reverse(const aStr: string): string;
+var
+  i: Integer;
+begin
+  Result := '';
+
+  for i := aStr.Length downto 1 do
+    Result := Result + aStr[i];
+end;
 
 function TMyStrHelper.CutHTMLTags: TMyStr;
 var
@@ -52,17 +67,9 @@ begin
     end;
 end;
 
-procedure TMyStrHelper.SaveToFile(FileName: String);
-var
-  SL: TStringList;
+procedure TMyStrHelper.SaveToFile(const aPath: string);
 begin
-  SL := TStringList.Create;
-  try
-    SL.Text := Self;
-    SL.SaveToFile(FileName);
-  finally
-    SL.Free;
-  end;
+  TFilesEngine.SaveTextToFile(aPath, Self);
 end;
 
 function TMyStrHelper.CutByKey(aFirstKey: string; aLastKey: string; aFirstKeyNum: integer = 1): TMyStr;

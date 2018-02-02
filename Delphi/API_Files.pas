@@ -17,7 +17,8 @@ type
   TFilesEngine = class
   public
     class function GetFileInfoArr(const aPath: string): TArray<TFileInfo>;
-    class function GetTextFromFile(const aPath: String): String;
+    class function GetTextFromFile(const aPath: string): string;
+    class procedure SaveTextToFile(const aPath, aText: string);
   end;
 
 implementation
@@ -26,6 +27,11 @@ uses
   System.IOUtils,
   System.SysUtils,
   System.Types;
+
+class procedure TFilesEngine.SaveTextToFile(const aPath, aText: string);
+begin
+  TFile.WriteAllText(aPath, aText);
+end;
 
 class function TFilesEngine.GetTextFromFile(const aPath: String): String;
 begin
