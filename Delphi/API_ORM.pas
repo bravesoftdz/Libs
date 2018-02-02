@@ -21,10 +21,13 @@ type
 
   TPrimaryKey = array of TPrimaryKeyField;
 
+  TRelType = (rtUnknown, rtOne2One, rtOne2Many);
+
   TForeignKey = record
     FieldName: string;
     ReferEntityClass: TEntityClass;
     ReferFieldName: string;
+    RelType: TRelType;
   end;
 
   TSructure = record
@@ -97,7 +100,7 @@ type
     class function GetStructure: TSructure; virtual; abstract;
     class function GetTableName: string;
     class procedure AddForeignKey(var aForeignKeyArr: TArray<TForeignKey>; aFieldName: string;
-      aReferEntityClass: TEntityClass; aReferFieldName: string = '');
+      aReferEntityClass: TEntityClass; aReferFieldName: string = ''; aRelType: TRelType = rtUnknown);
     class procedure AddPimaryKeyField(var aPrimaryKey: TPrimaryKey; aFieldName: string;
       aFieldType: TFieldType);
     procedure Delete;
@@ -289,7 +292,9 @@ begin
                 ForeignKeyArr := EntityClass.GetStructure.ForeignKeyArr;
 
                 for ForeignKey in ForeignKeyArr do
-                  if Self.ClassType = ForeignKey.ReferEntityClass then
+                  if (Self.ClassType = ForeignKey.ReferEntityClass) and
+                     (ForeignKey.RelType <> rtOne2Many)
+                  then
                     begin
                       PropName := GetPropName(PropList^[i]);
                       Entity := GetObjectProp(Self, PropName) as EntityClass;
@@ -368,7 +373,9 @@ begin
           begin
             PropClass := GetObjectPropClass(Self, PropList^[i]);
 
-            if ForeignKey.ReferEntityClass = PropClass then
+            if (ForeignKey.ReferEntityClass = PropClass) and
+               (ForeignKey.RelType <> rtOne2Many)
+            then
               begin
                 PropName := GetPropName(PropList^[i]);
                 Entity := GetObjectProp(Self, PropName) as ForeignKey.ReferEntityClass;
@@ -509,7 +516,9 @@ begin
   FilterArr := [];
   for ForeignKey in ForeignKeyArr do
     begin
-      if ForeignKey.ReferEntityClass = aOwnerEntity.ClassType then
+      if (ForeignKey.ReferEntityClass = aOwnerEntity.ClassType) and
+         (ForeignKey.RelType <> rtOne2One)
+      then
         begin
           Filter := Format('%s = ''%s''', [
             ForeignKey.FieldName,
@@ -545,12 +554,13 @@ begin
 end;
 
 class procedure TEntityAbstract.AddForeignKey(var aForeignKeyArr: TArray<TForeignKey>;
-  aFieldName: string; aReferEntityClass: TEntityClass; aReferFieldName: string = '');
+  aFieldName: string; aReferEntityClass: TEntityClass; aReferFieldName: string = ''; aRelType: TRelType = rtUnknown);
 var
   ForeignKey: TForeignKey;
 begin
   ForeignKey.FieldName := aFieldName;
   ForeignKey.ReferEntityClass := aReferEntityClass;
+  ForeignKey.RelType := aRelType;
 
   if not aReferFieldName.IsEmpty then
     ForeignKey.ReferFieldName := aReferFieldName
