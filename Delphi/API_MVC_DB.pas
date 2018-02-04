@@ -13,14 +13,15 @@ type
   protected
     FDBEngine: TDBEngine;
   public
-    constructor Create(aDataObj: TObjectDictionary<string, TObject>); override;
+    constructor Create(aDataObj: TObjectDictionary<string, TObject>; aTaskIndex: Integer = 0); override;
   end;
 
   TControllerDB = class abstract(TControllerAbstract)
   private
     //FCryptEngine: TCryptEngine;
     FDBEngine: TDBEngine;
-    procedure ConnectToDB;
+    function AddDBEngine: TDBEngine;
+    procedure ConnectToDB(aDBEngine: TDBEngine);
   protected
     FConnectOnCreate: Boolean;
     FConnectParams: TConnectParams;
@@ -47,18 +48,44 @@ implementation
 uses
   System.SysUtils;
 
-procedure TControllerDB.CallModel<T>(aThreadCount: Integer = 1);
+function TControllerDB.AddDBEngine: TDBEngine;
 begin
-  FDataObj.AddOrSetValue('DBEngine', FDBEngine);
-
-  inherited CallModel<T>(aThreadCount);
+  Result := FDBEngineClass.Create(FConnectParams);
+  if FConnectOnCreate then
+    ConnectToDB(Result);
 end;
 
-constructor TModelDB.Create(aDataObj: TObjectDictionary<string, TObject>);
+procedure TControllerDB.CallModel<T>(aThreadCount: Integer = 1);
+var
+  DBEngine: TDBEngine;
+  DBEngineList: TObjectList<TDBEngine>;
+  i: Integer;
+begin
+  DBEngineList := TObjectList<TDBEngine>.Create(False);
+  try
+    DBEngineList.Add(FDBEngine);
+
+    for i := 2 to aThreadCount do
+      begin
+        DBEngine := AddDBEngine;
+        DBEngineList.Add(DBEngine);
+      end;
+
+    FDataObj.AddOrSetValue('DBEngineList', DBEngineList);
+    inherited CallModel<T>(aThreadCount);
+  finally
+    DBEngineList.Free;
+  end;
+end;
+
+constructor TModelDB.Create(aDataObj: TObjectDictionary<string, TObject>; aTaskIndex: Integer = 0);
+var
+  DBEngineList: TObjectList<TDBEngine>;
 begin
   inherited;
 
-  FDBEngine := aDataObj.Items['DBEngine'] as TDBEngine;
+  DBEngineList := aDataObj.Items['DBEngineList'] as TObjectList<TDBEngine>;
+  FDBEngine := DBEngineList[aTaskIndex];
 end;
 
 procedure TControllerDB.BeforeDestroy;
@@ -82,9 +109,9 @@ begin
   inherited;
 end;
 
-procedure TControllerDB.ConnectToDB;
+procedure TControllerDB.ConnectToDB(aDBEngine: TDBEngine);
 begin
-  FDBEngine.OpenConnection;
+  aDBEngine.OpenConnection;
 end;
 
 constructor TControllerDB.Create;
@@ -103,8 +130,7 @@ begin
   if not Assigned(FDBEngineClass) then
     raise Exception.Create('FDBEngineClass isn`t assigned!');
 
-  FDBEngine := FDBEngineClass.Create(FConnectParams);
-  if FConnectOnCreate then ConnectToDB;
+  FDBEngine := AddDBEngine;
 
   //if Assigned(FCryptEngineClass) then
   //  FCryptEngine := FCryptEngineClass.Create(FCryptParams);

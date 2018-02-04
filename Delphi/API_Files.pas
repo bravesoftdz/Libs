@@ -24,6 +24,7 @@ type
 implementation
 
 uses
+  System.Classes,
   System.IOUtils,
   System.SysUtils,
   System.Types;
@@ -34,8 +35,18 @@ begin
 end;
 
 class function TFilesEngine.GetTextFromFile(const aPath: String): String;
+var
+  SL: TStringList;
 begin
-  Result := TFile.ReadAllText(aPath);
+  //Result := TFile.ReadAllText(aPath);
+
+  SL := TStringList.Create;
+  try
+    SL.LoadFromFile(aPath);
+    Result := SL.Text;
+  finally
+    SL.Free;
+  end;
 end;
 
 procedure TFileInfo.LoadFromFile(aPath: string);

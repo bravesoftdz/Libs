@@ -110,7 +110,7 @@ var
   SIDItem: string;
   SIDArr: TArray<string>;
 begin
-  Page := FHTTP.Get('https://translate.yandex.by/');
+  Page := FHTTP.Get('https://translate.yandex.by');
 
   SID := Page.CutByKey('SID: ''', '''');
   SIDArr := SID.Split(['.']);

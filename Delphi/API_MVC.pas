@@ -27,13 +27,15 @@ type
     procedure Execute(Sender: TObject);
   protected
     FDataObj: TObjectDictionary<string, TObject>;
+    FTaskIndex: Integer;
     procedure SendMessage(aMsg: string);
   public
     /// <summary>
     /// Override this procedure as point of enter to Model work.
     /// </summary>
     procedure Start; virtual; abstract;
-    constructor Create(aDataObj: TObjectDictionary<string, TObject>); virtual;
+    constructor Create(aDataObj: TObjectDictionary<string, TObject>; aTaskIndex: Integer = 0); virtual;
+    property TaskIndex: Integer read FTaskIndex;
   end;
 
   IViewAbstract = interface
@@ -105,8 +107,9 @@ begin
     ModelMessageProc(aMsg, aModel);
 end;
 
-constructor TModelAbstract.Create(aDataObj: TObjectDictionary<string, TObject>);
+constructor TModelAbstract.Create(aDataObj: TObjectDictionary<string, TObject>; aTaskIndex: Integer = 0);
 begin
+  FTaskIndex := aTaskIndex;
   FDataObj := aDataObj;
 end;
 
@@ -128,7 +131,7 @@ begin
   for i := 1 to aThreadCount do
     begin
       ModelClass := T;
-      Model := ModelClass.Create(FDataObj);
+      Model := ModelClass.Create(FDataObj, i - 1);
       Model.FOnModelMessage := ModelListener;
 
       ModelInit(Model);
