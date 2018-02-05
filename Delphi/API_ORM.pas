@@ -594,7 +594,7 @@ begin
   then
     Result := '';
 
-  if (aInstance.FieldType in [ftInteger, ftFloat]) and
+  if (aInstance.FieldType in [ftInteger, ftShortint, ftFloat]) and
      VarIsNull(Result)
   then
     Result := 0;
@@ -740,7 +740,7 @@ begin
   LastInsertedID := FDBEngine.GetLastInsertedID;
 
   for i := 0 to Length(FInstanceArr) - 1 do
-    if FInstanceArr[i].FieldName = 'Id' then
+    if FInstanceArr[i].FieldName = 'ID' then
       begin
         FInstanceArr[i].Value := LastInsertedID;
         Break;

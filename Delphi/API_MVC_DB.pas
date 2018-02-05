@@ -20,7 +20,7 @@ type
   private
     //FCryptEngine: TCryptEngine;
     FDBEngine: TDBEngine;
-    function AddDBEngine: TDBEngine;
+    function CreateDBEngine: TDBEngine;
     procedure ConnectToDB(aDBEngine: TDBEngine);
   protected
     FConnectOnCreate: Boolean;
@@ -48,7 +48,7 @@ implementation
 uses
   System.SysUtils;
 
-function TControllerDB.AddDBEngine: TDBEngine;
+function TControllerDB.CreateDBEngine: TDBEngine;
 begin
   Result := FDBEngineClass.Create(FConnectParams);
   if FConnectOnCreate then
@@ -67,7 +67,7 @@ begin
 
     for i := 2 to aThreadCount do
       begin
-        DBEngine := AddDBEngine;
+        DBEngine := CreateDBEngine;
         DBEngineList.Add(DBEngine);
       end;
 
@@ -130,7 +130,7 @@ begin
   if not Assigned(FDBEngineClass) then
     raise Exception.Create('FDBEngineClass isn`t assigned!');
 
-  FDBEngine := AddDBEngine;
+  FDBEngine := CreateDBEngine;
 
   //if Assigned(FCryptEngineClass) then
   //  FCryptEngine := FCryptEngineClass.Create(FCryptParams);
