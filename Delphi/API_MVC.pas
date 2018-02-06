@@ -28,6 +28,8 @@ type
   protected
     FDataObj: TObjectDictionary<string, TObject>;
     FTaskIndex: Integer;
+    procedure AfterCreate; virtual;
+    procedure BeforeDestroy; virtual;
     procedure SendMessage(aMsg: string);
   public
     /// <summary>
@@ -35,6 +37,7 @@ type
     /// </summary>
     procedure Start; virtual; abstract;
     constructor Create(aDataObj: TObjectDictionary<string, TObject>; aTaskIndex: Integer = 0); virtual;
+    destructor Destroy; override;
     property TaskIndex: Integer read FTaskIndex;
   end;
 
@@ -71,6 +74,21 @@ implementation
 
 uses
   System.SysUtils;
+
+procedure TModelAbstract.BeforeDestroy;
+begin
+end;
+
+destructor TModelAbstract.Destroy;
+begin
+  BeforeDestroy;
+
+  inherited;
+end;
+
+procedure TModelAbstract.AfterCreate;
+begin
+end;
 
 function TControllerAbstract.GetViewListener: TViewMessageProc;
 begin
@@ -111,6 +129,8 @@ constructor TModelAbstract.Create(aDataObj: TObjectDictionary<string, TObject>; 
 begin
   FTaskIndex := aTaskIndex;
   FDataObj := aDataObj;
+
+  AfterCreate;
 end;
 
 procedure TModelAbstract.Execute(Sender: TObject);

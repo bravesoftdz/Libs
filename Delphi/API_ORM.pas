@@ -96,6 +96,7 @@ type
     FCryptEngine: TCryptEngine;
     procedure AfterCreate; virtual;
     procedure BeforeDelete; virtual;
+    property DBEngine: TDBEngine read FDBEngine;
   public
     class function GetStructure: TSructure; virtual; abstract;
     class function GetTableName: string;
@@ -708,7 +709,7 @@ begin
         begin
           if i > 0 then
             SetPart := SetPart + ', ';
-          SetPart := SetPart + Format('%s = :%s', [Instance.FieldName, Instance.FieldName]);
+          SetPart := SetPart + Format('`%s` = :%s', [Instance.FieldName, Instance.FieldName]);
           Inc(i);
         end;
     end;
@@ -795,7 +796,7 @@ begin
               FieldsPart := FieldsPart + ', ';
               ValuesPart := ValuesPart + ', ';
             end;
-          FieldsPart := FieldsPart + Instance.FieldName;
+          FieldsPart := FieldsPart + Format('`%s`', [Instance.FieldName]);
           ValuesPart := ValuesPart + ':' + Instance.FieldName;
           Inc(i);
         end;
@@ -976,7 +977,7 @@ begin
   aParam.DataType := FieldType;
 
   case FieldType of
-    ftFloat, ftInteger:
+    ftFloat, ftInteger, ftSmallint:
       begin
         if aValue = 0 then
           aParam.Clear

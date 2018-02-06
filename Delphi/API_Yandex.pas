@@ -112,7 +112,7 @@ var
 begin
   Page := FHTTP.Get('https://translate.yandex.by');
 
-  SID := Page.CutByKey('SID: ''', '''');
+  SID := TStrTool.CutByKey(Page, 'SID: ''', '''');
   SIDArr := SID.Split(['.']);
 
   for SIDItem in SIDArr do

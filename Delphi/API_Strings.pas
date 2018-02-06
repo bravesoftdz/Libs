@@ -4,6 +4,8 @@ interface
 
 type
   TStrTool = class
+    class function CutArrayByKey(const aStr, aFirstKey, aLastKey: string): TArray<string>;
+    class function CutByKey(const aStr, aFirstKey, aLastKey: string; aFirstKeyNum: integer = 1): string;
     class function Reverse(const aStr: string): string;
   end;
 
@@ -11,7 +13,6 @@ type
 
   TMyStrHelper = record helper for TMyStr
   public
-    function CutByKey(aFirstKey: string; aLastKey: string; aFirstKeyNum: integer = 1): TMyStr;
     function CutHTMLTags: TMyStr;
 
     procedure SaveToFile(const aPath: string);
@@ -23,6 +24,24 @@ uses
   API_Files,
   System.Classes,
   System.SysUtils;
+
+class function TStrTool.CutArrayByKey(const aStr, aFirstKey, aLastKey: string): TArray<string>;
+var
+  Page: string;
+  Row: string;
+begin
+  Page := aStr;
+  Result := [];
+
+  while Page.Contains(aFirstKey) do
+    begin
+      Row := CutByKey(Page, aFirstKey, aLastKey);
+      Result := Result + [Row];
+
+      Page := Page.Remove(0, Page.IndexOf(aFirstKey) + aFirstKey.Length);
+      Page := Page.Remove(0, Page.IndexOf(aLastKey) + aLastKey.Length);
+    end;
+end;
 
 class function TStrTool.Reverse(const aStr: string): string;
 var
@@ -72,20 +91,21 @@ begin
   TFilesEngine.SaveTextToFile(aPath, Self);
 end;
 
-function TMyStrHelper.CutByKey(aFirstKey: string; aLastKey: string; aFirstKeyNum: integer = 1): TMyStr;
+class function TStrTool.CutByKey(const aStr, aFirstKey, aLastKey: string; aFirstKeyNum: integer = 1): string;
 var
   i: integer;
 begin
-  Result := Self;
+  Result := aStr;
 
   for i := 1 to aFirstKeyNum - 1 do
-    Delete(Result, 1, Pos(aFirstKey, Result) + Length(aFirstKey));
+    Result := Result.Remove(0, Result.IndexOf(aFirstKey) + aFirstKey.Length);
 
-  if Pos(aFirstKey, Result) > 0 then
+  if Result.Contains(aFirstKey) or
+     aFirstKey.IsEmpty
+  then
     begin
-      Result := Copy(Result, Pos(aFirstKey, Result) + Length(aFirstKey), Length(Result));
-      Delete(Result, Pos(aLastKey, Result), Length(Result));
-      Result := Trim(Result);
+      Result := Result.Substring(Result.IndexOf(aFirstKey) + aFirstKey.Length, Result.Length);
+      Result := Result.Remove(Result.IndexOf(aLastKey), Result.Length);
     end
   else
     Result := '';
