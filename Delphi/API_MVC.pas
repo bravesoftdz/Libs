@@ -24,9 +24,12 @@ type
   TModelAbstract = class abstract
   private
     FOnModelMessage: TModelMessageProc;
+    function GetEndMessage: string;
     procedure Execute(Sender: TObject);
   protected
+    FCanceled: Boolean;
     FDataObj: TObjectDictionary<string, TObject>;
+    FTask: ITask;
     FTaskIndex: Integer;
     procedure AfterCreate; virtual;
     procedure BeforeDestroy; virtual;
@@ -36,8 +39,10 @@ type
     /// Override this procedure as point of enter to Model work.
     /// </summary>
     procedure Start; virtual; abstract;
+    procedure Stop;
     constructor Create(aDataObj: TObjectDictionary<string, TObject>; aTaskIndex: Integer = 0); virtual;
     destructor Destroy; override;
+    property EndMessage: string read GetEndMessage;
     property TaskIndex: Integer read FTaskIndex;
   end;
 
@@ -46,22 +51,17 @@ type
     procedure SendMessage(aMsg: string);
   end;
 
-  TTaskData = record
-    Model: TModelAbstract;
-    Task: ITask;
-  end;
-
 {$M+}
   TControllerAbstract = class abstract
   private
-    FTaskDataArr: TArray<TTaskData>;
+    FRunningModelArr: TArray<TModelAbstract>;
     procedure DoViewListener(const aMsg: string);
-    procedure ModelListener(const aMsg: string; aModel: TModelAbstract);
     procedure ModelInit(aModel: TModelAbstract);
     function GetViewListener: TViewMessageProc;
   protected
     FDataObj: TObjectDictionary<string, TObject>;
     procedure CallModel<T: TModelAbstract>(aThreadCount: Integer = 1);
+    procedure ModelListener(const aMsg: string; aModel: TModelAbstract); virtual;
     procedure PerfomViewMessage(const aMsg: string); virtual;
   public
     constructor Create; virtual;
@@ -74,6 +74,16 @@ implementation
 
 uses
   System.SysUtils;
+
+procedure TModelAbstract.Stop;
+begin
+  FCanceled := True;
+end;
+
+function TModelAbstract.GetEndMessage: string;
+begin
+  Result := Format('On%sEnd',[Self.ClassName.Substring(1)]);
+end;
 
 procedure TModelAbstract.BeforeDestroy;
 begin
@@ -136,7 +146,7 @@ end;
 procedure TModelAbstract.Execute(Sender: TObject);
 begin
   Start;
-  SendMessage(Format('On%sEnd',[Self.ClassName.Substring(1)]));
+  SendMessage(EndMessage);
   Free;
 end;
 
@@ -146,7 +156,6 @@ var
   Model: TModelAbstract;
   ModelClass: TModelClass;
   Task: ITask;
-  TaskData: TTaskData;
 begin
   for i := 1 to aThreadCount do
     begin
@@ -158,17 +167,26 @@ begin
 
       Task := TTask.Create(Self, Model.Execute);
 
-      TaskData.Task := Task;
-      TaskData.Model := Model;
-
-      FTaskDataArr := FTaskDataArr + [TaskData];
+      Model.FTask := Task;
+      FRunningModelArr := FRunningModelArr + [Model];
 
       Task.Start;
     end;
 end;
 
 destructor TControllerAbstract.Destroy;
+var
+  Model: TModelAbstract;
+  TaskArr: array of ITask;
 begin
+  for Model in FRunningModelArr do
+    begin
+      Model.Stop;
+      TaskArr := TaskArr + [Model.FTask];
+    end;
+
+  TTask.WaitForAll(TaskArr);
+
   FDataObj.Free;
 
   inherited;

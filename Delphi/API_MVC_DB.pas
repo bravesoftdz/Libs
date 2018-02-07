@@ -36,6 +36,7 @@ type
     /// </summary>
     procedure InitDB(var aDBEngineClass: TDBEngineClass; out aConnectParams: TConnectParams;
       out aConnectOnCreate: Boolean); virtual; abstract;
+    procedure ModelListener(const aMsg: string; aModel: TModelAbstract); override;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -47,6 +48,17 @@ implementation
 
 uses
   System.SysUtils;
+
+procedure TControllerDB.ModelListener(const aMsg: string; aModel: TModelAbstract);
+begin
+  if (aMsg = aModel.EndMessage) and
+     (aModel.InheritsFrom(TModelDB)) and
+     (aModel.TaskIndex > 0)
+  then
+    TModelDB(aModel).FDBEngine.Free;
+
+  inherited;
+end;
 
 function TControllerDB.CreateDBEngine: TDBEngine;
 begin
