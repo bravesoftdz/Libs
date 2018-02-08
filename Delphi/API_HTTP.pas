@@ -20,6 +20,7 @@ type
   public
     function Get(const aURL: string): string;
     function Post(const aURL: string; aPostData: TStringList): string;
+    procedure SetHeaders(aHeadersStr: string);
     constructor Create(aEnabledCookies: Boolean = False);
     destructor Destroy; override;
   end;
@@ -27,7 +28,26 @@ type
 implementation
 
 uses
+  API_Strings,
   System.SysUtils;
+
+procedure THTTP.SetHeaders(aHeadersStr: string);
+var
+  Header: string;
+  HeadersArr: TArray<string>;
+  Name: string;
+  Value: string;
+begin
+  HeadersArr := aHeadersStr.Split([';']);
+
+  for Header in HeadersArr do
+    begin
+      Name := TStrTool.ExtractKey(Header);
+      Value := TStrTool.ExtractValue(Header);
+      FIdHTTP.Request.CustomHeaders.AddValue(Name, Value);
+    end;
+
+end;
 
 function THTTP.Post(const aURL: string; aPostData: TStringList): string;
 begin

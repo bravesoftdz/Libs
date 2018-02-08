@@ -50,7 +50,6 @@ type
   TEntityAbstract = class abstract
   private
     FFreeListProcArr: TArray<TMethod>;
-    FDBEngine: TDBEngine;
     FInstanceArr: TArray<TInstance>;
     FIsNewInstance: Boolean;
     FStoreListProcArr: TArray<TMethod>;
@@ -94,9 +93,9 @@ type
     procedure UpdateToDB;
   protected
     FCryptEngine: TCryptEngine;
+    FDBEngine: TDBEngine;
     procedure AfterCreate; virtual;
     procedure BeforeDelete; virtual;
-    property DBEngine: TDBEngine read FDBEngine;
   public
     class function GetStructure: TSructure; virtual; abstract;
     class function GetTableName: string;

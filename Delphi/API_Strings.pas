@@ -6,6 +6,11 @@ type
   TStrTool = class
     class function CutArrayByKey(const aStr, aFirstKey, aLastKey: string): TArray<string>;
     class function CutByKey(const aStr, aFirstKey, aLastKey: string; aFirstKeyNum: integer = 1): string;
+    class function CutByKeyRearward(const aStr, aFirstKey, aLastKey: string; aFirstKeyNum: Integer = 1): string;
+    class function CutFromKey(const aStr, aKey: string; aKeyNum: Integer = 1): string;
+    class function CutToKey(const aStr, aKey: string; aKeyNum: Integer = 1): string;
+    class function ExtractKey(const aKeyValue: string): string;
+    class function ExtractValue(const aKeyValue: string): string;
     class function Reverse(const aStr: string): string;
   end;
 
@@ -24,6 +29,47 @@ uses
   API_Files,
   System.Classes,
   System.SysUtils;
+
+class function TStrTool.ExtractValue(const aKeyValue: string): string;
+begin
+  Result := aKeyValue.Substring(aKeyValue.IndexOf('=') + 1, aKeyValue.Length);
+end;
+
+class function TStrTool.ExtractKey(const aKeyValue: string): string;
+begin
+  Result := aKeyValue.Substring(0, aKeyValue.IndexOf('='));
+end;
+
+class function TStrTool.CutFromKey(const aStr, aKey: string; aKeyNum: Integer = 1): string;
+var
+  i: Integer;
+begin
+  Result := aStr;
+
+  for i := 1 to aKeyNum do
+    Result := Result.Remove(Result.LastIndexOf(aKey), Result.Length);
+end;
+
+class function TStrTool.CutToKey(const aStr, aKey: string; aKeyNum: Integer = 1): string;
+var
+  i: Integer;
+begin
+  Result := aStr;
+
+  for i := 1 to aKeyNum - 1 do
+    Result := Result.Remove(0, Result.IndexOf(aKey) + aKey.Length);
+end;
+
+class function TStrTool.CutByKeyRearward(const aStr, aFirstKey, aLastKey: string; aFirstKeyNum: Integer = 1): string;
+var
+  i: integer;
+begin
+  Result := aStr;
+
+  Result := CutFromKey(Result, aFirstKey, aFirstKeyNum);
+
+  Result := Result.Substring(Result.LastIndexOf(aLastKey) + 1, Result.Length);
+end;
 
 class function TStrTool.CutArrayByKey(const aStr, aFirstKey, aLastKey: string): TArray<string>;
 var
@@ -92,13 +138,10 @@ begin
 end;
 
 class function TStrTool.CutByKey(const aStr, aFirstKey, aLastKey: string; aFirstKeyNum: integer = 1): string;
-var
-  i: integer;
 begin
   Result := aStr;
 
-  for i := 1 to aFirstKeyNum - 1 do
-    Result := Result.Remove(0, Result.IndexOf(aFirstKey) + aFirstKey.Length);
+  Result := CutToKey(Result, aFirstKey, aFirstKeyNum);
 
   if Result.Contains(aFirstKey) or
      aFirstKey.IsEmpty

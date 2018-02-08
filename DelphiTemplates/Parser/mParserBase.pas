@@ -6,7 +6,8 @@ uses
   API_HTTP,
   API_MVC_DB,
   eGroup,
-  eLink;
+  eLink,
+  System.Classes;
 
 type
   TEachGroupRef = reference to procedure(const aArrRow: string; var aGroup: TGroup);
@@ -16,15 +17,16 @@ type
     FHTTP: THTTP;
     function GetNextLink: TLink;
     procedure AddZeroLink;
-    procedure ProcessLink(aLink: TLink);
+    procedure ParsePostData(var aPostStringList: TStringList; aPostData: string);
+    procedure ProcessLink(aLink: TLink; out aBodyGroup: TGroup);
   protected
-    procedure AddInEachGroup(aLink: TLink; aDataArr: TArray<string>; aEachGroupProc: TEachGroupRef);
-    procedure AddLink(const aLevel: Integer; const aURL: string);
+    procedure AddAsEachGroup(aOwnerGroup: TGroup; aDataArr: TArray<string>; aEachGroupProc: TEachGroupRef);
+    procedure AddPostOrHeaderData(var aPostData: string; const aKey, aValue: string);
     procedure AfterCreate; override;
     procedure BeforeDestroy; override;
-    procedure ProcessPageRoute(const aPage: string; var aLink: TLink); virtual; abstract;
+    procedure ProcessPageRoute(const aPage: string; aLink: TLink; var aBodyGroup: TGroup); virtual; abstract;
   public
-    inDomen: string;
+    inDomain: string;
     inJobID: Integer;
     procedure Start; override;
   end;
@@ -33,26 +35,29 @@ implementation
 
 uses
   eJob,
-  FireDAC.Comp.Client;
+  FireDAC.Comp.Client,
+  System.SysUtils;
 
-procedure TModelParser.AddLink(const aLevel: Integer; const aURL: string);
+procedure TModelParser.ParsePostData(var aPostStringList: TStringList; aPostData: string);
 var
-  Link: TLink;
+  PostDataArr: TArray<string>;
+  PostDataRow: string;
 begin
-  Link := TLink.Create(FDBEngine);
-  try
-    Link.JobID := inJobID;
-    Link.Level := aLevel;
-    Link.Link := aURL;
-    Link.HandledTypeID := 1;
+  PostDataArr := aPostData.Split([';']);
 
-    Link.Store;
-  finally
-    Link.Free;
-  end;
+  for PostDataRow in PostDataArr do
+    aPostStringList.Add(PostDataRow);
 end;
 
-procedure TModelParser.AddInEachGroup(aLink: TLink; aDataArr: TArray<string>; aEachGroupProc: TEachGroupRef);
+procedure TModelParser.AddPostOrHeaderData(var aPostData: string; const aKey, aValue: string);
+begin
+  if not aPostData.IsEmpty then
+    aPostData := aPostData + ';';
+
+  aPostData := aPostData + Format('%s=%s', [aKey, aValue]);
+end;
+
+procedure TModelParser.AddAsEachGroup(aOwnerGroup: TGroup; aDataArr: TArray<string>; aEachGroupProc: TEachGroupRef);
 var
   ArrRow: string;
   Group: TGroup;
@@ -61,17 +66,33 @@ begin
     begin
       Group := TGroup.Create(FDBEngine);
       aEachGroupProc(ArrRow, Group);
-      aLink.GroupList.Add(Group);
+      aOwnerGroup.ChildGroupList.Add(Group);
     end;
 end;
 
-procedure TModelParser.ProcessLink(aLink: TLink);
+procedure TModelParser.ProcessLink(aLink: TLink; out aBodyGroup: TGroup);
 var
   Page: string;
+  PostSL: TStringList;
 begin
-  Page := FHTTP.Get(aLink.Link);
+  aBodyGroup := TGroup.Create(FDBEngine, aLink.BodyGroupID);
+  aBodyGroup.ParentGroupID := aLink.OwnerGroupID;
 
-  ProcessPageRoute(Page, aLink);
+  if aLink.PostData.IsEmpty then
+    Page := FHTTP.Get(aLink.Link)
+  else
+    begin
+      PostSL := TStringList.Create;
+      try
+        ParsePostData(PostSL, aLink.PostData);
+        FHTTP.SetHeaders(aLink.Headers);
+        Page := FHTTP.Post(aLink.Link, PostSL)
+      finally
+        PostSL.Free;
+      end;
+    end;
+
+  ProcessPageRoute(Page, aLink, aBodyGroup);
 end;
 
 procedure TModelParser.AddZeroLink;
@@ -130,19 +151,25 @@ end;
 
 procedure TModelParser.Start;
 var
+  BodyGroup: TGroup;
   Link: TLink;
 begin
   while not FCanceled do
     begin
+      // CS
       Link := GetNextLink;
+      Link.HandledTypeID := 2;
+      Link.Store;
+      // CS
+
       try
-        Link.HandledTypeID := 2;
+        ProcessLink(Link, BodyGroup);
+
+        BodyGroup.StoreAll;
+        Link.BodyGroupID := BodyGroup.ID;
         Link.Store;
-
-        ProcessLink(Link);
-
-        Link.StoreAll;
       finally
+        BodyGroup.Free;
         Link.Free;
       end;
     end;

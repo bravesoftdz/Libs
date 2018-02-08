@@ -9,14 +9,14 @@ uses
 type
   TRecord = class(TEntity)
   private
-    FGroupID: Integer;
     FKey: string;
+    FOwnerGroupID: Integer;
     FValue: string;
   public
     class function GetStructure: TSructure; override;
   published
-    property GroupID: Integer read FGroupID write FGroupID;
     property Key: string read FKey write FKey;
+    property OwnerGroupID: Integer read FOwnerGroupID write FOwnerGroupID;
     property Value: string read FValue write FValue;
   end;
 
@@ -31,7 +31,7 @@ class function TRecord.GetStructure: TSructure;
 begin
   Result.TableName := 'RECORDS';
 
-  AddForeignKey(Result.ForeignKeyArr, 'GROUP_ID', TGroup, 'ID');
+  AddForeignKey(Result.ForeignKeyArr, 'OWNER_GROUP_ID', TGroup, 'ID');
 end;
 
 end.
