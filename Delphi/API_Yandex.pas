@@ -105,7 +105,7 @@ end;
 function TYaTranslater.GetIDKey: string;
 var
   NewSIDArr: TArray<string>;
-  Page: TMyStr;
+  Page: string;
   SID: string;
   SIDItem: string;
   SIDArr: TArray<string>;

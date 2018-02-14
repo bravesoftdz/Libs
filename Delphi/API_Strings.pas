@@ -11,23 +11,13 @@ type
     class function CutToKey(const aStr, aKey: string; aKeyNum: Integer = 1): string;
     class function ExtractKey(const aKeyValue: string): string;
     class function ExtractValue(const aKeyValue: string): string;
+    class function RemoveHTMLTags(const aStr: string): string;
     class function Reverse(const aStr: string): string;
-  end;
-
-  TMyStr = type string;
-
-  TMyStrHelper = record helper for TMyStr
-  public
-    function CutHTMLTags: TMyStr;
-
-    procedure SaveToFile(const aPath: string);
   end;
 
 implementation
 
 uses
-  API_Files,
-  System.Classes,
   System.SysUtils;
 
 class function TStrTool.ExtractValue(const aKeyValue: string): string;
@@ -99,7 +89,7 @@ begin
     Result := Result + aStr[i];
 end;
 
-function TMyStrHelper.CutHTMLTags: TMyStr;
+class function TStrTool.RemoveHTMLTags(const aStr: string): string;
 var
   i: Integer;
   IsOpenTag: Boolean;
@@ -107,22 +97,22 @@ var
 begin
   IsOpenTag := False;
   TagText := '';
-  Result := Self;
+  Result := aStr;
 
-  for i := 1 to Length(Self) do
+  for i := 1 to Length(aStr) do
     begin
-      if (Pos(Result, '>') = 0) and
-         (Pos(Result, '<') = 0)
+      if not Result.Contains('>') or
+         not Result.Contains('<')
       then
         Exit(Result);
 
-      if Self[i] = '<' then
+      if aStr[i] = '<' then
         IsOpenTag := True;
 
       if IsOpenTag then
-        TagText := TagText + Self[i];
+        TagText := TagText + aStr[i];
 
-      if Result[i] = '>' then
+      if aStr[i] = '>' then
         begin
           Result := StringReplace(Result, TagText, '', [rfReplaceAll, rfIgnoreCase]);
 
@@ -130,11 +120,6 @@ begin
           TagText := '';
         end;
     end;
-end;
-
-procedure TMyStrHelper.SaveToFile(const aPath: string);
-begin
-  TFilesEngine.SaveTextToFile(aPath, Self);
 end;
 
 class function TStrTool.CutByKey(const aStr, aFirstKey, aLastKey: string; aFirstKeyNum: integer = 1): string;
