@@ -9,12 +9,16 @@ uses
   System.Classes;
 
 type
+  THTTPEvent = procedure(aIdCookieManager: TIdCookieManager) of object;
+
   THTTP = class
   private
     FEnableCookies: Boolean;
     FIdCookieManager: TIdCookieManager;
     FIdHTTP: TIdHTTP;
     FIdSSLIOHandlerSocketOpenSSL: TIdSSLIOHandlerSocketOpenSSL;
+    FOnBeforeLoad: THTTPEvent;
+    FURL: string;
     procedure FreeHTTP;
     procedure InitHTTP;
   public
@@ -23,6 +27,8 @@ type
     procedure SetHeaders(aHeadersStr: string);
     constructor Create(aEnabledCookies: Boolean = False);
     destructor Destroy; override;
+    property OnBeforeLoad: THTTPEvent read FOnBeforeLoad write FOnBeforeLoad;
+    property URL: string read FURL;
   end;
 
 implementation
@@ -52,6 +58,7 @@ end;
 function THTTP.Post(const aURL: string; aPostData: TStringList): string;
 begin
   Result := FIdHTTP.Post(aURL, aPostData);
+  FURL := FIdHTTP.URL.URI;
 end;
 
 procedure THTTP.FreeHTTP;
@@ -68,7 +75,11 @@ end;
 
 function THTTP.Get(const aURL: string): string;
 begin
+  if Assigned(FOnBeforeLoad) then
+    FOnBeforeLoad(FIdHTTP.CookieManager);
+
   Result := FIdHTTP.Get(aURL);
+  FURL := FIdHTTP.URL.URI;
 end;
 
 destructor THTTP.Destroy;

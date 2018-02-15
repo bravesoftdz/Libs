@@ -7,23 +7,27 @@ uses
   API_MVC_DB,
   eGroup,
   eLink,
+  IdCookieManager,
   System.Classes;
 
 type
   TEachGroupRef = reference to procedure(const aArrRow: string; var aGroup: TGroup);
 
-  TModelParser = class(TModelDB)
+  TModelParser = class abstract(TModelDB)
   private
-    FHTTP: THTTP;
+    FCurrLink: TLink;
     function GetNextLink: TLink;
     procedure AddZeroLink;
+    procedure BeforeLoad(aIdCookieManager: TIdCookieManager);
     procedure ParsePostData(var aPostStringList: TStringList; aPostData: string);
     procedure ProcessLink(aLink: TLink; out aBodyGroup: TGroup);
   protected
+    FHTTP: THTTP;
     procedure AddAsEachGroup(aOwnerGroup: TGroup; aDataArr: TArray<string>; aEachGroupProc: TEachGroupRef);
     procedure AddPostOrHeaderData(var aPostData: string; const aKey, aValue: string);
     procedure AfterCreate; override;
     procedure BeforeDestroy; override;
+    procedure BeforePageLoad(aIdCookieManager: TIdCookieManager; aLink: TLink); virtual;
     procedure ProcessPageRoute(const aPage: string; aLink: TLink; var aBodyGroup: TGroup); virtual; abstract;
   public
     inDomain: string;
@@ -37,6 +41,15 @@ uses
   eJob,
   FireDAC.Comp.Client,
   System.SysUtils;
+
+procedure TModelParser.BeforePageLoad(aIdCookieManager: TIdCookieManager; aLink: TLink);
+begin
+end;
+
+procedure TModelParser.BeforeLoad(aIdCookieManager: TIdCookieManager);
+begin
+  BeforePageLoad(aIdCookieManager, FCurrLink);
+end;
 
 procedure TModelParser.ParsePostData(var aPostStringList: TStringList; aPostData: string);
 var
@@ -77,6 +90,8 @@ var
 begin
   aBodyGroup := TGroup.Create(FDBEngine, aLink.BodyGroupID);
   aBodyGroup.ParentGroupID := aLink.OwnerGroupID;
+
+  FCurrLink := aLink;
 
   if aLink.PostData.IsEmpty then
     Page := FHTTP.Get(aLink.Link)
@@ -146,7 +161,8 @@ end;
 
 procedure TModelParser.AfterCreate;
 begin
-  FHTTP := THTTP.Create;
+  FHTTP := THTTP.Create(True);
+  FHTTP.OnBeforeLoad := BeforeLoad;
 end;
 
 procedure TModelParser.Start;
