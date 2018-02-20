@@ -17,8 +17,10 @@ type
     FIdCookieManager: TIdCookieManager;
     FIdHTTP: TIdHTTP;
     FIdSSLIOHandlerSocketOpenSSL: TIdSSLIOHandlerSocketOpenSSL;
+    FOnAfterLoad: THTTPEvent;
     FOnBeforeLoad: THTTPEvent;
     FURL: string;
+    function GetPage(const aURL: string; aPostData: TStringList): string;
     procedure FreeHTTP;
     procedure InitHTTP;
   public
@@ -27,6 +29,7 @@ type
     procedure SetHeaders(aHeadersStr: string);
     constructor Create(aEnabledCookies: Boolean = False);
     destructor Destroy; override;
+    property OnAfterLoad: THTTPEvent read FOnAfterLoad write FOnAfterLoad;
     property OnBeforeLoad: THTTPEvent read FOnBeforeLoad write FOnBeforeLoad;
     property URL: string read FURL;
   end;
@@ -37,6 +40,22 @@ uses
   API_Strings,
   System.SysUtils;
 
+function THTTP.GetPage(const aURL: string; aPostData: TStringList): string;
+begin
+  if Assigned(FOnBeforeLoad) then
+    FOnBeforeLoad(FIdHTTP.CookieManager);
+
+  if Assigned(aPostData) then
+    Result := FIdHTTP.Post(aURL, aPostData)
+  else
+    Result := FIdHTTP.Get(aURL);
+
+  FURL := FIdHTTP.URL.URI;
+
+  if Assigned(FOnAfterLoad) then
+    FOnAfterLoad(FIdHTTP.CookieManager);
+end;
+
 procedure THTTP.SetHeaders(aHeadersStr: string);
 var
   Header: string;
@@ -44,6 +63,7 @@ var
   Name: string;
   Value: string;
 begin
+  FIdHTTP.Request.CustomHeaders.Clear;
   HeadersArr := aHeadersStr.Split([';']);
 
   for Header in HeadersArr do
@@ -57,8 +77,7 @@ end;
 
 function THTTP.Post(const aURL: string; aPostData: TStringList): string;
 begin
-  Result := FIdHTTP.Post(aURL, aPostData);
-  FURL := FIdHTTP.URL.URI;
+  Result := GetPage(aURL, aPostData);
 end;
 
 procedure THTTP.FreeHTTP;
@@ -75,11 +94,7 @@ end;
 
 function THTTP.Get(const aURL: string): string;
 begin
-  if Assigned(FOnBeforeLoad) then
-    FOnBeforeLoad(FIdHTTP.CookieManager);
-
-  Result := FIdHTTP.Get(aURL);
-  FURL := FIdHTTP.URL.URI;
+  Result := GetPage(aURL, nil);
 end;
 
 destructor THTTP.Destroy;

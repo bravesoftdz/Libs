@@ -18,6 +18,7 @@ type
     FCurrLink: TLink;
     function GetNextLink: TLink;
     procedure AddZeroLink;
+    procedure AfterLoad(aIdCookieManager: TIdCookieManager);
     procedure BeforeLoad(aIdCookieManager: TIdCookieManager);
     procedure ParsePostData(var aPostStringList: TStringList; aPostData: string);
     procedure ProcessLink(aLink: TLink; out aBodyGroup: TGroup);
@@ -26,6 +27,7 @@ type
     procedure AddAsEachGroup(aOwnerGroup: TGroup; aDataArr: TArray<string>; aEachGroupProc: TEachGroupRef);
     procedure AddPostOrHeaderData(var aPostData: string; const aKey, aValue: string);
     procedure AfterCreate; override;
+    procedure AfterPageLoad(aIdCookieManager: TIdCookieManager; aLink: TLink); virtual;
     procedure BeforeDestroy; override;
     procedure BeforePageLoad(aIdCookieManager: TIdCookieManager; aLink: TLink); virtual;
     procedure ProcessPageRoute(const aPage: string; aLink: TLink; var aBodyGroup: TGroup); virtual; abstract;
@@ -41,6 +43,15 @@ uses
   eJob,
   FireDAC.Comp.Client,
   System.SysUtils;
+
+procedure TModelParser.AfterLoad(aIdCookieManager: TIdCookieManager);
+begin
+  AfterPageLoad(aIdCookieManager, FCurrLink);
+end;
+
+procedure TModelParser.AfterPageLoad(aIdCookieManager: TIdCookieManager; aLink: TLink);
+begin
+end;
 
 procedure TModelParser.BeforePageLoad(aIdCookieManager: TIdCookieManager; aLink: TLink);
 begin
@@ -93,6 +104,8 @@ begin
 
   FCurrLink := aLink;
 
+  FHTTP.SetHeaders(aLink.Headers);
+
   if aLink.PostData.IsEmpty then
     Page := FHTTP.Get(aLink.Link)
   else
@@ -100,7 +113,6 @@ begin
       PostSL := TStringList.Create;
       try
         ParsePostData(PostSL, aLink.PostData);
-        FHTTP.SetHeaders(aLink.Headers);
         Page := FHTTP.Post(aLink.Link, PostSL)
       finally
         PostSL.Free;
@@ -163,6 +175,7 @@ procedure TModelParser.AfterCreate;
 begin
   FHTTP := THTTP.Create(True);
   FHTTP.OnBeforeLoad := BeforeLoad;
+  FHTTP.OnAfterLoad := AfterLoad;
 end;
 
 procedure TModelParser.Start;
