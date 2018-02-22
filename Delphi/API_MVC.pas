@@ -55,9 +55,10 @@ type
   TControllerAbstract = class abstract
   private
     FRunningModelArr: TArray<TModelAbstract>;
+    function GetViewListener: TViewMessageProc;
     procedure DoViewListener(const aMsg: string);
     procedure ModelInit(aModel: TModelAbstract);
-    function GetViewListener: TViewMessageProc;
+    procedure RemoveModel(aModel: TModelAbstract);
   protected
     FDataObj: TObjectDictionary<string, TObject>;
     procedure CallModel<T: TModelAbstract>(aThreadCount: Integer = 1);
@@ -74,6 +75,18 @@ implementation
 
 uses
   System.SysUtils;
+
+procedure TControllerAbstract.RemoveModel(aModel: TModelAbstract);
+var
+  i: Integer;
+  Model: TModelAbstract;
+begin
+  for i := 0 to Length(FRunningModelArr) - 1 do
+    if FRunningModelArr[i] = aModel then
+      Break;
+
+  Delete(FRunningModelArr, i, 1);
+end;
 
 procedure TModelAbstract.Stop;
 begin
@@ -128,6 +141,9 @@ procedure TControllerAbstract.ModelListener(const aMsg: string; aModel: TModelAb
 var
   ModelMessageProc: TModelMessageProc;
 begin
+  if aMsg = aModel.EndMessage then
+    RemoveModel(aModel);
+
   TMethod(ModelMessageProc).Code := Self.MethodAddress(aMsg);
   TMethod(ModelMessageProc).Data := Self;
 

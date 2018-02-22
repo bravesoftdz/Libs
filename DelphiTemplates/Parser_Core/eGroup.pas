@@ -48,10 +48,10 @@ begin
 
   Link.JobID := aJobID;
   Link.Level := aLevel;
-  Link.Link := aURL;
+  Link.URL := aURL;
   Link.HandledTypeID := 1;
-  Link.PostData := aPostData;
-  Link.Headers := aHeaders;
+  //Link.PostData := aPostData;
+  //Link.Headers := aHeaders;
 
   LinkList.Add(Link);
 end;

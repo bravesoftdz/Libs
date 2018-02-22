@@ -104,9 +104,9 @@ begin
 
   FCurrLink := aLink;
 
-  FHTTP.SetHeaders(aLink.Headers);
+  //FHTTP.SetHeaders(aLink.Headers);
 
-  if aLink.PostData.IsEmpty then
+  {if aLink.PostData.IsEmpty then
     Page := FHTTP.Get(aLink.Link)
   else
     begin
@@ -117,7 +117,7 @@ begin
       finally
         PostSL.Free;
       end;
-    end;
+    end;  }
 
   ProcessPageRoute(Page, aLink, aBodyGroup);
 end;
@@ -132,7 +132,7 @@ begin
   try
     Link.JobID := Job.ID;
     Link.Level := 0;
-    Link.Link := Job.ZeroLink;
+    Link.URL := Job.ZeroLink;
     Link.HandledTypeID := 1;
 
     Link.Store;
