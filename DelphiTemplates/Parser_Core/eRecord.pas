@@ -29,7 +29,7 @@ uses
 
 class function TRecord.GetStructure: TSructure;
 begin
-  Result.TableName := 'RECORDS';
+  Result.TableName := 'CORE_RECORDS';
 
   AddForeignKey(Result.ForeignKeyArr, 'OWNER_GROUP_ID', TGroup, 'ID');
 end;

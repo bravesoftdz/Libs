@@ -27,10 +27,13 @@ type
     property URL: string read FURL write FURL;
   end;
 
+  TIternalRequestList = TEntityAbstractList<TIternalRequest>;
+
 implementation
 
 uses
   API_Strings,
+  eLink,
   System.SysUtils;
 
 function TIternalRequest.GetPostDataItem(const aName: string): string;
@@ -61,6 +64,8 @@ end;
 class function TIternalRequest.GetStructure: TSructure;
 begin
   Result.TableName := 'RQST_ITERNAL_REQUESTS';
+
+  AddForeignKey(Result.ForeignKeyArr, 'LINK_ID', TLink, 'ID');
 end;
 
 end.

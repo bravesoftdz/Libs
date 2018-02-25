@@ -22,7 +22,7 @@ implementation
 
 class function TJob.GetStructure: TSructure;
 begin
-  Result.TableName := 'JOBS';
+  Result.TableName := 'CORE_JOBS';
 end;
 
 end.

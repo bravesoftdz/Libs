@@ -50,8 +50,6 @@ begin
   Link.Level := aLevel;
   Link.URL := aURL;
   Link.HandledTypeID := 1;
-  //Link.PostData := aPostData;
-  //Link.Headers := aHeaders;
 
   LinkList.Add(Link);
 end;
@@ -93,7 +91,7 @@ end;
 
 class function TGroup.GetStructure: TSructure;
 begin
-  Result.TableName := 'GROUPS';
+  Result.TableName := 'CORE_GROUPS';
 
   AddForeignKey(Result.ForeignKeyArr, 'PARENT_GROUP_ID', TGroup, 'ID')
 end;

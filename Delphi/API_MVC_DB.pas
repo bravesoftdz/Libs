@@ -112,13 +112,13 @@ destructor TControllerDB.Destroy;
 begin
   BeforeDestroy;
 
+  inherited;
+
   if FDBEngine.IsConnected then
     FDBEngine.CloseConnection;
   FDBEngine.Free;
 
   //if Assigned(FCryptEngine) then FCryptEngine.Free;
-
-  inherited;
 end;
 
 procedure TControllerDB.ConnectToDB(aDBEngine: TDBEngine);
