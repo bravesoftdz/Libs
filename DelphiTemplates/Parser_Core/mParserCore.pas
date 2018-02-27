@@ -17,6 +17,7 @@ type
     function GetNextLink: TLink;
     procedure AddZeroLink;
   protected
+    function GetNextLinkSQL: string; virtual;
     procedure AddAsEachGroup(aOwnerGroup: TGroup; aDataArr: TArray<string>; aEachGroupProc: TEachGroupRef);
     procedure ProcessLink(aLink: TLink; out aBodyGroup: TGroup); virtual;
   public
@@ -35,6 +36,11 @@ uses
   FireDAC.Comp.Client,
   System.Classes,
   System.SysUtils;
+
+function TModelParser.GetNextLinkSQL: string;
+begin
+  Result := 'select Id from core_links t where t.job_id = :JobID and t.handled_type_id = 1 order by t.level desc, t.id limit 1';
+end;
 
 function TModelParser.CheckFirstRun: Boolean;
 var
@@ -124,7 +130,7 @@ begin
 
   dsQuery := TFDQuery.Create(nil);
   try
-    SQL := 'select Id from core_links t where t.job_id = :JobID and t.handled_type_id = 1 order by t.level desc, t.id limit 1 ';
+    SQL := GetNextLinkSQL;
     dsQuery.SQL.Text := SQL;
     dsQuery.ParamByName('JobID').AsInteger := inJobID;
     FDBEngine.OpenQuery(dsQuery);

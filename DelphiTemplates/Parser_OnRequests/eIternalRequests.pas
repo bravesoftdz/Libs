@@ -16,10 +16,13 @@ type
     function GetHeaderItem(const aName: string): string;
     function GetStrItem(const aStr, aName: string): string;
     function GetPostDataItem(const aName: string): string;
+    procedure SetHeaderItem(const aName, aValue: string);
+    procedure SetPostDataItem(const aName, aValue: string);
+    procedure SetStrItem(var aProp: string; const aName, aValue: string);
   public
     class function GetStructure: TSructure; override;
-    property HeaderItem[const aName: string]: string read GetHeaderItem;
-    property PostDataItem[const aName: string]: string read GetPostDataItem;
+    property HeaderItem[const aName: string]: string read GetHeaderItem write SetHeaderItem;
+    property PostDataItem[const aName: string]: string read GetPostDataItem write SetPostDataItem;
   published
     property Headers: string read FHeaders write FHeaders;
     property LinkID: Integer read FLinkID write FLinkID;
@@ -35,6 +38,40 @@ uses
   API_Strings,
   eLink,
   System.SysUtils;
+
+procedure TIternalRequest.SetStrItem(var aProp: string; const aName, aValue: string);
+var
+  i: Integer;
+  Index: Integer;
+  PostDataArr: TArray<string>;
+begin
+  Index := -1;
+  PostDataArr := aProp.Split([';']);
+
+  for i := 0 to Length(PostDataArr) - 1 do
+    if TStrTool.ExtractKey(PostDataArr[i]) = aName then
+      begin
+        Index := i;
+        Break;
+      end;
+
+  if Index = -1 then
+    PostDataArr := PostDataArr + [Format('%s=%s', [aName, aValue])]
+  else
+    PostDataArr[Index] := Format('%s=%s', [aName, aValue]);
+
+  aProp := string.Join(';', PostDataArr);
+end;
+
+procedure TIternalRequest.SetPostDataItem(const aName, aValue: string);
+begin
+  SetStrItem(FPostData, aName, aValue);
+end;
+
+procedure TIternalRequest.SetHeaderItem(const aName, aValue: string);
+begin
+  SetStrItem(FHeaders, aName, aValue);
+end;
 
 function TIternalRequest.GetPostDataItem(const aName: string): string;
 begin

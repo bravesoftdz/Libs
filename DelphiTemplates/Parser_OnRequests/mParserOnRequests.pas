@@ -5,11 +5,14 @@ interface
 uses
   API_HTTP,
   eGroup,
+  eIternalRequests,
   eLink,
   IdCookieManager,
   mParserCore;
 
 type
+  THandleRequestProc = procedure(const aPage: string; aIternalRequest: TIternalRequest; aGroup: TGroup) of object;
+
   TModelParserOnRequests = class abstract(TModelParser)
   private
     FCurrLink: TLink;
@@ -17,15 +20,27 @@ type
     procedure BeforeLoad(aIdCookieManager: TIdCookieManager);
   protected
     FHTTP: THTTP;
+    function GetNextLinkSQL: string; override;
     procedure AfterCreate; override;
     procedure AfterPageLoad(aIdCookieManager: TIdCookieManager; aLink: TLink); virtual;
     procedure BeforeDestroy; override;
     procedure BeforePageLoad(aIdCookieManager: TIdCookieManager; aLink: TLink); virtual;
     procedure ProcessLink(aLink: TLink; out aBodyGroup: TGroup); override;
     procedure ProcessPageRoute(const aPage: string; aLink: TLink; var aBodyGroup: TGroup); virtual; abstract;
+    procedure ProcessRequest(aIternalRequest: TIternalRequest; aGroup: TGroup; aHandleProc: THandleRequestProc);
   end;
 
 implementation
+
+function TModelParserOnRequests.GetNextLinkSQL: string;
+begin
+
+end;
+
+procedure TModelParserOnRequests.ProcessRequest(aIternalRequest: TIternalRequest; aGroup: TGroup; aHandleProc: THandleRequestProc);
+begin
+
+end;
 
 procedure TModelParserOnRequests.BeforePageLoad(aIdCookieManager: TIdCookieManager; aLink: TLink);
 begin
