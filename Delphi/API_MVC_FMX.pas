@@ -5,21 +5,23 @@ interface
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
-  API_MVC,
-  API_MVC_DB;
+  API_MVC;
 
 type
   TViewFMXBase = class(TForm, IViewAbstract)
   private
     { Private declarations }
-    FOnViewMessage: TViewMessageProc;
-    procedure FormFree(Sender: TObject; var Action: TCloseAction);
-  protected
     FController: TControllerAbstract;
     FControllerClass: TControllerClass;
     FDoNotFreeAfterClose: Boolean;
     FIsMainView: Boolean;
-    procedure InitView; virtual; abstract;
+    FOnViewMessage: TViewMessageProc;
+    procedure FormFree(Sender: TObject; var Action: TCloseAction);
+  protected
+    /// <summary>
+    /// Override this procedure for assign FControllerClass in the main Application View(Form).
+    /// </summary>
+    procedure InitMVC(var aControllerClass: TControllerClass); virtual;
     procedure SendMessage(aMsg: string);
   public
     { Public declarations }
@@ -28,11 +30,18 @@ type
     property OnViewMessage: TViewMessageProc read FOnViewMessage write FOnViewMessage;
   end;
 
-  TViewFMXBaseClass = class of TViewFMXBase;
+  TFMXSupport = class(TPlatformSupport)
+  public
+    function CreateView<T: TViewFMXBase>(aInstantShow: Boolean = False): T;
+  end;
 
-  TControllerFMXBase = class(TControllerDB)
-  protected
-    procedure CreateView(aViewFMXClass: TViewFMXBaseClass; aInstantShow: Boolean = False);
+  TControllerFMXBase = class(TControllerAbstract)
+  private
+    FFMX: TFMXSupport;
+  public
+    constructor Create; override;
+    destructor Destroy; override;
+    property FMX: TFMXSupport read FFMX;
   end;
 
 var
@@ -42,15 +51,31 @@ implementation
 
 {$R *.fmx}
 
-procedure TControllerFMXBase.CreateView(aViewFMXClass: TViewFMXBaseClass; aInstantShow: Boolean = False);
-var
-  View: TViewFMXBase;
+destructor TControllerFMXBase.Destroy;
 begin
-  View := aViewFMXClass.Create(nil);
-  View.OnViewMessage := ProcessMessage;
+  FFMX.Free;
+
+  inherited;
+end;
+
+constructor TControllerFMXBase.Create;
+begin
+  inherited;
+
+  FFMX := TFMXSupport.Create(Self);
+end;
+
+procedure TViewFMXBase.InitMVC(var aControllerClass: TControllerClass);
+begin
+end;
+
+function TFMXSupport.CreateView<T>(aInstantShow: Boolean = False): T;
+begin
+  Result := T.Create(nil);
+  Result.OnViewMessage := FController.ViewListener;
 
   if aInstantShow then
-    View.Show;
+    Result.Show;
 end;
 
 destructor TViewFMXBase.Destroy;
@@ -72,13 +97,13 @@ constructor TViewFMXBase.Create(AOwner: TComponent);
 begin
   inherited;
 
-  InitView;
+  InitMVC(FControllerClass);
 
   if Assigned(FControllerClass) and not Assigned(FController) then
     begin
       FIsMainView := True;
       FController := FControllerClass.Create;
-      FOnViewMessage := FController.ProcessMessage;
+      FOnViewMessage := FController.ViewListener;
     end;
 
   if not FDoNotFreeAfterClose then

@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2018/03/01 15:49:28.000.958,=C:\Users\nekrash\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2018/03/01 15:49:56.000.792,D:\Git\Libs\DelphiTemplates\FMX_MVC_ORM\Source\Unit1.pas=C:\Users\nekrash\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2018/03/01 15:49:56.000.792,D:\Git\Libs\DelphiTemplates\FMX_MVC_ORM\Source\Unit1.fmx=C:\Users\nekrash\Documents\Embarcadero\Studio\Projects\Unit1.fmx</Transaction>
+    <Transaction>2018/03/01 15:50:10.000.027,D:\Git\Libs\DelphiTemplates\FMX_MVC_ORM\Source\FMX_MVC_ORM_Template.dproj=C:\Users\nekrash\Documents\Embarcadero\Studio\Projects\Project1.dproj</Transaction>
+    <Transaction>2018/03/01 15:50:36.000.914,=D:\Git\Libs\DelphiTemplates\FMX_MVC_ORM\Source\cController.pas</Transaction>
+    <Transaction>2018/03/01 15:50:41.000.340,=D:\Git\Libs\DelphiTemplates\FMX_MVC_ORM\Source\eCommon.pas</Transaction>
+    <Transaction>2018/03/01 15:50:45.000.462,=D:\Git\Libs\DelphiTemplates\FMX_MVC_ORM\Source\vMain.pas</Transaction>
+    <Transaction>2018/03/01 15:50:52.000.989,D:\Git\Libs\DelphiTemplates\FMX_MVC_ORM\Source\Unit1.pas=</Transaction>
+    <Transaction>2018/03/01 15:52:26.000.379,=D:\Git\Libs\Delphi\API_DB.pas</Transaction>
+    <Transaction>2018/03/01 15:52:42.000.406,=D:\Git\Libs\Delphi\API_MVC_FMXDB.pas</Transaction>
+    <Transaction>2018/03/01 15:52:57.000.616,=D:\Git\Libs\Delphi\API_MVC_DB.pas</Transaction>
+    <Transaction>2018/03/01 15:53:08.000.458,=D:\Git\Libs\Delphi\API_MVC.pas</Transaction>
+    <Transaction>2018/03/01 15:53:21.000.365,=D:\Git\Libs\Delphi\API_MVC_FMX.pas</Transaction>
+    <Transaction>2018/03/01 15:53:34.000.952,=D:\Git\Libs\Delphi\API_ORM.pas</Transaction>
+    <Transaction>2018/03/01 15:56:27.000.365,D:\Git\Libs\DelphiTemplates\FMX_MVC_ORM\Source\eCommon.pas=</Transaction>
+    <Transaction>2018/03/01 15:56:32.000.202,D:\Git\Libs\Delphi\API_ORM.pas=</Transaction>
+    <Transaction>2018/03/01 16:09:57.000.534,=D:\Git\Libs\DelphiTemplates\FMX_MVC_ORM\Source\eCommon.pas</Transaction>
+    <Transaction>2018/03/01 16:10:10.000.414,=D:\Git\Libs\Delphi\API_ORM.pas</Transaction>
+  </Transactions>
+</BorlandProject>

@@ -1,14 +1,11 @@
-object ViewFMXBase: TViewFMXBase
-  Left = 131
-  Top = 131
-  Caption = 'Form1'
+object ViewMain: TViewMain
+  Left = 0
+  Top = 0
+  Caption = 'ViewMain'
   ClientHeight = 480
   ClientWidth = 640
-  Position = DesktopCenter
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
-  Left = 131
-  Top = 131
   DesignerMasterStyle = 0
 end

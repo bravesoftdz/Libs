@@ -30,6 +30,7 @@ uses
 procedure TViewMain.InitMVC(var aControllerClass: TControllerClass);
 begin
   aControllerClass := TController;
+  ViewMain := Self;
 end;
 
 end.

@@ -12,12 +12,12 @@ type
   private
     { Private declarations }
     FController: TControllerAbstract;
+    FControllerClass: TControllerClass;
     FDoNotFreeAfterClose: Boolean;
     FIsMainView: Boolean;
     FOnViewMessage: TViewMessageProc;
     procedure FormFree(Sender: TObject; var Action: TCloseAction);
   protected
-    FControllerClass: TControllerClass;
     /// <summary>
     /// Override this procedure for assign FControllerClass in the main Application View(Form).
     /// </summary>
@@ -30,12 +30,9 @@ type
     property OnViewMessage: TViewMessageProc read FOnViewMessage write FOnViewMessage;
   end;
 
-  TVCLSupport = class
-  private
-    FController: TControllerAbstract;
+  TVCLSupport = class(TPlatformSupport)
   public
     function CreateView<T: TViewVCLBase>(aInstantShow: Boolean = False): T;
-    constructor Create(aController: TControllerAbstract);
   end;
 
   TControllerVCLBase = class(TControllerAbstract)
@@ -63,11 +60,6 @@ begin
   inherited;
 
   FVCL := TVCLSupport.Create(Self);
-end;
-
-constructor TVCLSupport.Create(aController: TControllerAbstract);
-begin
-  FController := aController;
 end;
 
 procedure TViewVCLBase.InitMVC(var aControllerClass: TControllerClass);

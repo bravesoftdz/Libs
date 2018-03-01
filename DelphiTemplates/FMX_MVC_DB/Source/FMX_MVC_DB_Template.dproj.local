@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2018/03/01 13:15:17.000.008,=C:\Users\nekrash\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2018/03/01 13:16:07.000.353,D:\Git\Libs\DelphiTemplates\FMX_MVC\Source\Unit1.fmx=C:\Users\nekrash\Documents\Embarcadero\Studio\Projects\Unit1.fmx</Transaction>
+    <Transaction>2018/03/01 13:16:07.000.353,D:\Git\Libs\DelphiTemplates\FMX_MVC\Source\Unit1.pas=C:\Users\nekrash\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2018/03/01 13:16:25.000.970,D:\Git\Libs\DelphiTemplates\FMX_MVC\Source\FMX_MVC_Template.dproj=C:\Users\nekrash\Documents\Embarcadero\Studio\Projects\Project1.dproj</Transaction>
+    <Transaction>2018/03/01 13:25:43.000.968,=D:\Git\Libs\Delphi\API_MVC_FMX.pas</Transaction>
+    <Transaction>2018/03/01 13:27:44.000.104,=D:\Git\Libs\Delphi\API_MVC.pas</Transaction>
+    <Transaction>2018/03/01 14:08:54.000.558,D:\Git\Libs\DelphiTemplates\FMX_MVC\Source\Unit1.pas=D:\Git\Libs\DelphiTemplates\FMX_MVC\Source\vMain.pas</Transaction>
+    <Transaction>2018/03/01 14:08:54.000.558,D:\Git\Libs\DelphiTemplates\FMX_MVC\Source\Unit1.fmx=D:\Git\Libs\DelphiTemplates\FMX_MVC\Source\vMain.fmx</Transaction>
+    <Transaction>2018/03/01 14:23:09.000.950,=D:\Git\Libs\DelphiTemplates\FMX_MVC\Source\Unit1.pas</Transaction>
+    <Transaction>2018/03/01 14:23:25.000.206,D:\Git\Libs\DelphiTemplates\FMX_MVC\Source\Unit1.pas=D:\Git\Libs\DelphiTemplates\FMX_MVC\Source\cController.pas</Transaction>
+    <Transaction>2018/03/01 14:48:00.000.075,D:\Git\Libs\DelphiTemplates\FMX_MVC_DB\Source\FMX_MVC_Template.dproj=D:\Git\Libs\DelphiTemplates\FMX_MVC_DB\Source\FMX_MVC_DB_Template.dproj</Transaction>
+    <Transaction>2018/03/01 14:53:48.000.771,=D:\Git\Libs\Delphi\API_MVC_FMXDB.pas</Transaction>
+    <Transaction>2018/03/01 14:56:01.000.306,=D:\Git\Libs\Delphi\API_MVC_DB.pas</Transaction>
+    <Transaction>2018/03/01 14:57:13.000.638,=D:\Git\Libs\Delphi\API_DB.pas</Transaction>
+  </Transactions>
+</BorlandProject>

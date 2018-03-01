@@ -71,10 +71,22 @@ type
   end;
 {$M-}
 
+  TPlatformSupport = class abstract
+  protected
+    FController: TControllerAbstract;
+  public
+    constructor Create(aController: TControllerAbstract);
+  end;
+
 implementation
 
 uses
   System.SysUtils;
+
+constructor TPlatformSupport.Create(aController: TControllerAbstract);
+begin
+  FController := aController;
+end;
 
 procedure TControllerAbstract.RemoveModel(aModel: TModelAbstract);
 var

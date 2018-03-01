@@ -3,7 +3,6 @@ unit API_ORM;
 interface
 
 uses
-  API_Crypt,
   API_DB,
   Data.DB,
   FireDAC.Comp.Client,
@@ -53,7 +52,7 @@ type
     FInstanceArr: TArray<TInstance>;
     FIsNewInstance: Boolean;
     FStoreListProcArr: TArray<TMethod>;
-    class function GetInstanceArr(aQuery: TFDQuery; aCryptEngine: TCryptEngine = nil): TArray<TInstance>;
+    class function GetInstanceArr(aQuery: TFDQuery): TArray<TInstance>;
     class function GetPropNameByFieldName(aFieldName: string): string;
     function CheckPropExist(aFieldName: string; out aPropName: string): Boolean;
     function GetDeleteSQLString: string;
@@ -92,7 +91,6 @@ type
     procedure StoreLists;
     procedure UpdateToDB;
   protected
-    FCryptEngine: TCryptEngine;
     FDBEngine: TDBEngine;
     procedure AfterCreate; virtual;
     procedure BeforeDelete; virtual;
@@ -109,8 +107,6 @@ type
     procedure StoreAll;
     constructor Create(aDBEngine: TDBEngine); overload;
     constructor Create(aDBEngine: TDBEngine; aInstanceArr: TArray<TInstance>); overload;
-    constructor Create(aDBEngine: TDBEngine; aCryptEngine: TCryptEngine;
-      aPKeyValueArr: TArray<Variant>); overload;
     constructor Create(aDBEngine: TDBEngine; aPKeyValueArr: TArray<Variant>); overload;
     destructor Destroy; override;
     property IsNewInstance: Boolean read FIsNewInstance;
@@ -138,8 +134,6 @@ type
     function GetSelectSQLString(aFilterArr, aOrderArr: TArray<string>): string;
     procedure CleanRecycleBin;
     procedure FillListByInstances(aFilterArr, aOrderArr: TArray<string>);
-  protected
-    FCryptEngine: TCryptEngine;
   public
     class function GetEntityClass: TEntityClass;
     procedure Clear;
@@ -252,10 +246,9 @@ begin
 
         if not dsQuery.IsEmpty then
           begin
-            InstanceArr := GetInstanceArr(dsQuery, FCryptEngine);
+            InstanceArr := GetInstanceArr(dsQuery);
 
             aJoinEntity := aEntityClass.Create(FDBEngine, InstanceArr);
-            aJoinEntity.FCryptEngine := FCryptEngine;
 
             SetObjectProp(Self, aEntityPropName, aJoinEntity);
           end;
@@ -313,13 +306,6 @@ begin
   finally
     FreeMem(PropList);
   end;
-end;
-
-constructor TEntityAbstract.Create(aDBEngine: TDBEngine; aCryptEngine: TCryptEngine;
-  aPKeyValueArr: TArray<Variant>);
-begin
-  FCryptEngine := aCryptEngine;
-  Create(aDBEngine, aPKeyValueArr);
 end;
 
 procedure TEntityAbstract.ExecProcArr(aProcArr: TArray<TMethod>);
@@ -534,7 +520,6 @@ begin
     begin
       FOwnerEntity := aOwnerEntity;
 
-      FCryptEngine := aOwnerEntity.FCryptEngine;
       Create(aOwnerEntity.FDBEngine, FilterArr, aOrderArr);
 
       Proc := Free;
@@ -852,7 +837,7 @@ begin
   AfterCreate;
 end;
 
-class function TEntityAbstract.GetInstanceArr(aQuery: TFDQuery; aCryptEngine: TCryptEngine = nil): TArray<TInstance>;
+class function TEntityAbstract.GetInstanceArr(aQuery: TFDQuery): TArray<TInstance>;
 var
   i: Integer;
   Instance: TInstance;
@@ -863,14 +848,7 @@ begin
     begin
       Instance.FieldName := UpperCase(aQuery.Fields[i].FullName);
       Instance.FieldType := aQuery.Fields[i].DataType;
-
-      if (Instance.FieldType in [ftString, ftWideString, ftWideMemo]) and
-         (Assigned(aCryptEngine)) and
-         (not aQuery.Fields[i].IsNull)
-      then
-        Instance.Value := aCryptEngine.Decrypt(aQuery.Fields[i].Value)
-      else
-        Instance.Value := aQuery.Fields[i].Value;
+      Instance.Value := aQuery.Fields[i].Value;
 
       Result := Result + [Instance];
     end;
@@ -990,10 +968,7 @@ begin
         if aValue = '' then
           aParam.Clear
         else
-          if Assigned(FCryptEngine) then
-            aParam.AsString := FCryptEngine.Encrypt(aValue)
-          else
-            aParam.AsString := aValue;
+          aParam.AsString := aValue;
       end
   else
     aParam.AsString := aValue;
@@ -1045,7 +1020,7 @@ begin
 
     FDBEngine.OpenQuery(dsQuery);
 
-    FInstanceArr := GetInstanceArr(dsQuery, FCryptEngine);
+    FInstanceArr := GetInstanceArr(dsQuery);
   finally
     dsQuery.Free;
   end;
@@ -1081,10 +1056,9 @@ begin
 
     while not dsQuery.EOF do
       begin
-        InstanceArr := TEntityAbstract.GetInstanceArr(dsQuery, FCryptEngine);
+        InstanceArr := TEntityAbstract.GetInstanceArr(dsQuery);
 
         Entity := GetEntityClass.Create(FDBEngine, InstanceArr);
-        Entity.FCryptEngine := Self.FCryptEngine;
         Add(Entity);
 
         dsQuery.Next;

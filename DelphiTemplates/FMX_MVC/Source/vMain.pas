@@ -3,15 +3,16 @@ unit vMain;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
+  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
+  FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
   API_MVC,
-  API_MVC_VCL;
+  API_MVC_FMX;
 
 type
-  TViewMain = class(TViewVCLBase)
+  TViewMain = class(TViewFMXBase)
   private
     { Private declarations }
+  protected
     procedure InitMVC(var aControllerClass: TControllerClass); override;
   public
     { Public declarations }
@@ -22,7 +23,7 @@ var
 
 implementation
 
-{$R *.dfm}
+{$R *.fmx}
 
 uses
   cController;

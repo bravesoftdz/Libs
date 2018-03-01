@@ -4,11 +4,11 @@ interface
 
 uses
   API_DB,
-  API_MVC_VCLDB;
+  API_MVC_FMXDB;
 
 type
-  TController = class(TControllerVCLDB)
-  private
+  TController = class(TControllerFMXDB)
+  protected
     procedure InitDB(var aDBEngineClass: TDBEngineClass; out aConnectParams: TConnectParams;
       out aConnectOnCreate: Boolean); override;
   end;

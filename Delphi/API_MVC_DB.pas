@@ -3,7 +3,6 @@ unit API_MVC_DB;
 interface
 
 uses
-  //API_Crypt,
   API_DB,
   API_MVC,
   System.Generics.Collections;
@@ -18,15 +17,12 @@ type
 
   TControllerDB = class abstract(TControllerAbstract)
   private
-    //FCryptEngine: TCryptEngine;
     FDBEngine: TDBEngine;
     function CreateDBEngine: TDBEngine;
     procedure ConnectToDB(aDBEngine: TDBEngine);
   protected
     FConnectOnCreate: Boolean;
     FConnectParams: TConnectParams;
-    //FCryptEngineClass: TCryptEngineClass;
-    //FCryptParams: TCryptParams;
     FDBEngineClass: TDBEngineClass;
     procedure AfterCreate; virtual;
     procedure BeforeDestroy; virtual;
@@ -40,7 +36,6 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
-    //property CryptEngine: TCryptEngine read FCryptEngine;
     property DBEngine: TDBEngine read FDBEngine;
   end;
 
@@ -117,8 +112,6 @@ begin
   if FDBEngine.IsConnected then
     FDBEngine.CloseConnection;
   FDBEngine.Free;
-
-  //if Assigned(FCryptEngine) then FCryptEngine.Free;
 end;
 
 procedure TControllerDB.ConnectToDB(aDBEngine: TDBEngine);
@@ -143,9 +136,6 @@ begin
     raise Exception.Create('FDBEngineClass isn`t assigned!');
 
   FDBEngine := CreateDBEngine;
-
-  //if Assigned(FCryptEngineClass) then
-  //  FCryptEngine := FCryptEngineClass.Create(FCryptParams);
 
   AfterCreate;
 end;
