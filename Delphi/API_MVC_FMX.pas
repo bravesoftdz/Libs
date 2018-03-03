@@ -16,6 +16,7 @@ type
     FDoNotFreeAfterClose: Boolean;
     FIsMainView: Boolean;
     FOnViewMessage: TViewMessageProc;
+    function GetCloseMessage: string;
     procedure FormFree(Sender: TObject; var Action: TCloseAction);
   protected
     /// <summary>
@@ -27,6 +28,7 @@ type
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    property CloseMessage: string read GetCloseMessage;
     property OnViewMessage: TViewMessageProc read FOnViewMessage write FOnViewMessage;
   end;
 
@@ -50,6 +52,11 @@ var
 implementation
 
 {$R *.fmx}
+
+function TViewFMXBase.GetCloseMessage: string;
+begin
+  Result := Self.Name + 'Closed';
+end;
 
 destructor TControllerFMXBase.Destroy;
 begin
@@ -80,7 +87,7 @@ end;
 
 destructor TViewFMXBase.Destroy;
 begin
-  SendMessage(Self.Name + 'Closed');
+  SendMessage(CloseMessage);
 
   if FIsMainView then
     FController.Free;

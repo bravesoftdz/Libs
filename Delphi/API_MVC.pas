@@ -47,8 +47,10 @@ type
   end;
 
   IViewAbstract = interface
+    function GetCloseMessage: string;
     procedure InitMVC(var aControllerClass: TControllerClass);
     procedure SendMessage(aMsg: string);
+    property CloseMessage: string read GetCloseMessage;
   end;
 
 {$M+}

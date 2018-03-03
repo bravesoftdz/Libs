@@ -11,7 +11,9 @@ uses
   API_MVC in '..\..\..\Delphi\API_MVC.pas',
   API_MVC_FMX in '..\..\..\Delphi\API_MVC_FMX.pas' {ViewFMXBase},
   eCommon in 'eCommon.pas',
-  API_ORM in '..\..\..\Delphi\API_ORM.pas';
+  API_ORM in '..\..\..\Delphi\API_ORM.pas',
+  API_ORM_BindFMX in '..\..\..\Delphi\API_ORM_BindFMX.pas',
+  API_ORM_Bind in '..\..\..\Delphi\API_ORM_Bind.pas';
 
 {$R *.res}
 
