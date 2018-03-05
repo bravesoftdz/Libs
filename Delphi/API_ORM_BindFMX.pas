@@ -24,7 +24,9 @@ type
 implementation
 
 uses
-  FMX.Edit;
+  FMX.Edit,
+  FMX.ListBox,
+  System.Variants;
 
 function TORMBindFMX.GetFormComponent(aIndex: Integer): TComponent;
 begin
@@ -41,11 +43,8 @@ begin
   if Sender is TEdit then
     aEntity.Prop[aPropName] := TCustomEdit(Sender).Text;
 
-  {if Sender is TCheckBox then
-    if TCheckBox(Sender).Checked then
-      Entity.Prop[PropName] := 1
-    else
-      Entity.Prop[PropName] := 0; }
+  if Sender is TComboBox then
+    aEntity.Prop[aPropName] := TComboBox(Sender).ItemIndex + 1;
 end;
 
 constructor TORMBindFMX.Create(aForm: TForm);
@@ -55,10 +54,17 @@ end;
 
 procedure TORMBindFMX.SetControlProps(aControl: TComponent; aValue: Variant; aNotifyEvent: TNotifyEvent);
 begin
-  if aControl.ClassType = TEdit then
+  if aControl is TEdit then
     begin
       TEdit(aControl).OnChange := aNotifyEvent;
       TEdit(aControl).Text := aValue;
+    end;
+
+  if aControl is TComboBox then
+    begin
+      TComboBox(aControl).OnChange := aNotifyEvent;
+      if VarIsNumeric(aValue) then
+        TComboBox(aControl).ItemIndex := aValue - 1;
     end;
 
 {  if aControl.ClassType = TCheckBox then
