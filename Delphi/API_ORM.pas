@@ -128,7 +128,9 @@ type
   TEntityAbstractList<T: TEntityAbstract> = class(TObjectList<T>)
   private
     FDBEngine: TDBEngine;
+    FFilterArr: TArray<string>;
     FForeignKeyArr: TArray<TForeignKey>;
+    FOrderArr: TArray<string>;
     FOwnerEntity: TEntityAbstract;
     FRecycleBin: TArray<T>;
     function GetSelectSQLString(aFilterArr, aOrderArr: TArray<string>): string;
@@ -138,6 +140,7 @@ type
     class function GetEntityClass: TEntityClass;
     procedure Clear;
     procedure Delete(const aIndex: Integer);
+    procedure Refresh;
     procedure Remove(const aEntity: T); overload;
     procedure Remove(const aIndex: Integer); overload;
     procedure Store;
@@ -154,6 +157,12 @@ uses
   System.SysUtils,
   System.TypInfo,
   System.Variants;
+
+procedure TEntityAbstractList<T>.Refresh;
+begin
+  inherited Clear;
+  FillListByInstances(FFilterArr, FOrderArr);
+end;
 
 procedure TEntityAbstract.AfterCreate;
 begin
@@ -1072,10 +1081,12 @@ constructor TEntityAbstractList<T>.Create(aDBEngine: TDBEngine; aFilterArr, aOrd
 begin
   inherited Create(True);
 
+  FFilterArr := aFilterArr;
+  FOrderArr := aOrderArr;
   FDBEngine := aDBEngine;
 
-  if Length(aFilterArr) > 0 then
-    FillListByInstances(aFilterArr, aOrderArr);
+  if Length(FFilterArr) > 0 then
+    FillListByInstances(FFilterArr, FOrderArr);
 end;
 
 end.

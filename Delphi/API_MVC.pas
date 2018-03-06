@@ -29,6 +29,7 @@ type
   protected
     FCanceled: Boolean;
     FDataObj: TObjectDictionary<string, TObject>;
+    FIsAsync: Boolean;
     FTask: ITask;
     FTaskIndex: Integer;
     procedure AfterCreate; virtual;
@@ -62,8 +63,10 @@ type
     procedure ModelInit(aModel: TModelAbstract);
     procedure RemoveModel(aModel: TModelAbstract);
   protected
+    FIsAsyncModelRunMode: Boolean;
     FDataObj: TObjectDictionary<string, TObject>;
     procedure CallModel<T: TModelAbstract>(aThreadCount: Integer = 1);
+    procedure CallModelAsync<T: TModelAbstract>(aThreadCount: Integer = 1);
     procedure ModelListener(const aMsg: string; aModel: TModelAbstract); virtual;
     procedure PerfomViewMessage(const aMsg: string); virtual;
   public
@@ -84,6 +87,13 @@ implementation
 
 uses
   System.SysUtils;
+
+procedure TControllerAbstract.CallModelAsync<T>(aThreadCount: Integer = 1);
+begin
+  FIsAsyncModelRunMode := True;
+  CallModel<T>(aThreadCount);
+  FIsAsyncModelRunMode := False;
+end;
 
 constructor TPlatformSupport.Create(aController: TControllerAbstract);
 begin
@@ -177,7 +187,9 @@ procedure TModelAbstract.Execute(Sender: TObject);
 begin
   Start;
   SendMessage(EndMessage);
-  Free;
+
+  if not FIsAsync then
+    Free;
 end;
 
 procedure TControllerAbstract.CallModel<T>(aThreadCount: Integer = 1);
@@ -192,6 +204,7 @@ begin
       ModelClass := T;
       Model := ModelClass.Create(FDataObj, i - 1);
       Model.FOnModelMessage := ModelListener;
+      Model.FIsAsync := FIsAsyncModelRunMode;
 
       ModelInit(Model);
 

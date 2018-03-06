@@ -27,6 +27,7 @@ type
     procedure AfterCreate; virtual;
     procedure BeforeDestroy; virtual;
     procedure CallModel<T: TModelAbstract>(aThreadCount: Integer = 1);
+    procedure CallModelAsync<T: TModelAbstract>(aThreadCount: Integer = 1);
     /// <summary>
     /// Override this procedure for assign FDBEngineClass and set FConnectParams.
     /// </summary>
@@ -43,6 +44,13 @@ implementation
 
 uses
   System.SysUtils;
+
+procedure TControllerDB.CallModelAsync<T>(aThreadCount: Integer = 1);
+begin
+  FIsAsyncModelRunMode := True;
+  CallModel<T>(aThreadCount);
+  FIsAsyncModelRunMode := False;
+end;
 
 procedure TControllerDB.ModelListener(const aMsg: string; aModel: TModelAbstract);
 begin
