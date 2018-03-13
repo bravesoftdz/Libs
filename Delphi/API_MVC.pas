@@ -16,7 +16,7 @@ type
   TObjProc = procedure of object;
   TViewMessageProc = procedure(const aMsg: string) of object;
   TModelMessageProc = procedure(const aMsg: string; aModel: TModelAbstract) of object;
-  TModelInitProc = procedure(aModel: TModelAbstract) of object;
+  TModelEventProc = procedure(aModel: TModelAbstract) of object;
 
   /// <summary>
   /// inheritor class name have to contain verb f.e. TModelDoSomething
@@ -69,6 +69,7 @@ type
     procedure CallModelAsync<T: TModelAbstract>(aThreadCount: Integer = 1);
     procedure ModelListener(const aMsg: string; aModel: TModelAbstract); virtual;
     procedure PerfomViewMessage(const aMsg: string); virtual;
+    procedure StopModel<T: TModelAbstract>;
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -87,6 +88,28 @@ implementation
 
 uses
   System.SysUtils;
+
+procedure TControllerAbstract.StopModel<T>;
+var
+  Model: TModelAbstract;
+  TaskArr: array of ITask;
+begin
+  for Model in FRunningModelArr do
+    if Model is T then
+      begin
+        Model.Stop;
+        TaskArr := TaskArr + [Model.FTask];
+      end;
+
+  TTask.WaitForAll(TaskArr);
+
+  for Model in FRunningModelArr do
+    if Model is T then
+      begin
+        RemoveModel(Model);
+        Model.Free;
+      end;
+end;
 
 procedure TControllerAbstract.CallModelAsync<T>(aThreadCount: Integer = 1);
 begin
@@ -144,7 +167,7 @@ end;
 
 procedure TControllerAbstract.ModelInit(aModel: TModelAbstract);
 var
-  ModelInitProc: TModelInitProc;
+  ModelInitProc: TModelEventProc;
   ModelInitProcName: string;
 begin
   ModelInitProcName := Format('On%sInit',[aModel.ClassName.Substring(1)]);
@@ -163,16 +186,16 @@ end;
 
 procedure TControllerAbstract.ModelListener(const aMsg: string; aModel: TModelAbstract);
 var
-  ModelMessageProc: TModelMessageProc;
+  ModelEventProc: TModelEventProc;
 begin
   if aMsg = aModel.EndMessage then
     RemoveModel(aModel);
 
-  TMethod(ModelMessageProc).Code := Self.MethodAddress(aMsg);
-  TMethod(ModelMessageProc).Data := Self;
+  TMethod(ModelEventProc).Code := Self.MethodAddress(aMsg);
+  TMethod(ModelEventProc).Data := Self;
 
-  if Assigned(ModelMessageProc) then
-    ModelMessageProc(aMsg, aModel);
+  if Assigned(ModelEventProc) then
+    ModelEventProc(aModel);
 end;
 
 constructor TModelAbstract.Create(aDataObj: TObjectDictionary<string, TObject>; aTaskIndex: Integer = 0);
@@ -186,10 +209,12 @@ end;
 procedure TModelAbstract.Execute(Sender: TObject);
 begin
   Start;
-  SendMessage(EndMessage);
 
   if not FIsAsync then
-    Free;
+    begin
+      SendMessage(EndMessage);
+      Free;
+    end;
 end;
 
 procedure TControllerAbstract.CallModel<T>(aThreadCount: Integer = 1);
