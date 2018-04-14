@@ -16,6 +16,7 @@ type
     FDoNotFreeAfterClose: Boolean;
     FIsMainView: Boolean;
     FOnViewMessage: TViewMessageProc;
+    function GetCloseMessage: string;
     procedure FormFree(Sender: TObject; var Action: TCloseAction);
   protected
     /// <summary>
@@ -47,6 +48,11 @@ type
 implementation
 
 {$R *.dfm}
+
+function TViewVCLBase.GetCloseMessage: string;
+begin
+  Result := Self.Name + 'Closed';
+end;
 
 destructor TControllerVCLBase.Destroy;
 begin

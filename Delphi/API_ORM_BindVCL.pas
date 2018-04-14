@@ -1,4 +1,4 @@
-unit API_ORM_VCLBind;
+unit API_ORM_BindVCL;
 
 interface
 
