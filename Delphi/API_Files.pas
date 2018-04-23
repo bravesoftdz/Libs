@@ -82,16 +82,10 @@ begin
   if TDirectory.Exists(aPath) then
     begin
       Files := TDirectory.GetFiles(aPath);
-    end;
-
-  {if TFile.Exists(aPath) then
-    begin
-      e:=True;
     end
   else
-    begin
-           e:=False;
-    end;  }
+  if TFile.Exists(aPath) then
+    Files := [aPath];
 
   for i := 0 to Length(Files) - 1 do
     begin

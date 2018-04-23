@@ -50,6 +50,10 @@ type
   IViewAbstract = interface
     function GetCloseMessage: string;
     procedure InitMVC(var aControllerClass: TControllerClass);
+    /// <summary>
+    /// Message have to be a verb or a verb word at the begining
+    /// For example: AddFiles, etc.
+    /// </summary>
     procedure SendMessage(aMsg: string);
     property CloseMessage: string read GetCloseMessage;
   end;
