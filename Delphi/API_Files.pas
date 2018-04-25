@@ -18,6 +18,7 @@ type
   public
     class function GetFileInfoArr(const aPath: string): TArray<TFileInfo>;
     class function GetTextFromFile(const aPath: string): string;
+    class procedure Move(aSourceFullPath, aDestFullPath: string; aForceDir: Boolean = True);
     class procedure SaveTextToFile(const aPath, aText: string);
   end;
 
@@ -28,6 +29,20 @@ uses
   System.IOUtils,
   System.SysUtils,
   System.Types;
+
+class procedure TFilesEngine.Move(aSourceFullPath, aDestFullPath: string; aForceDir: Boolean = True);
+var
+  DestDirectory: string;
+begin
+  if aForceDir then
+    begin
+      DestDirectory := TPath.GetDirectoryName(aDestFullPath);
+      if not TDirectory.Exists(DestDirectory) then
+        TDirectory.CreateDirectory(DestDirectory);
+    end;
+
+  TFile.Move(aSourceFullPath, aDestFullPath);
+end;
 
 class procedure TFilesEngine.SaveTextToFile(const aPath, aText: string);
 begin
