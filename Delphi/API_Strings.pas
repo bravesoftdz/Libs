@@ -11,6 +11,8 @@ type
     class function CutToKey(const aStr, aKey: string; aKeyNum: Integer = 1): string;
     class function ExtractKey(const aKeyValue: string): string;
     class function ExtractValue(const aKeyValue: string): string;
+    class function GetRegExFirstMatch(const aStr: string; aRegEx: string): string;
+    class function GetRegExMatch(const aStr: string; aRegEx: string): TArray<string>;
     class function RemoveHTMLTags(const aStr: string): string;
     class function Reverse(const aStr: string): string;
   end;
@@ -18,7 +20,32 @@ type
 implementation
 
 uses
+  System.RegularExpressions,
   System.SysUtils;
+
+class function TStrTool.GetRegExMatch(const aStr: string; aRegEx: string): TArray<string>;
+var
+  Match: TMatch;
+begin
+  Match := TRegEx.Match(aStr, aRegEx);
+
+  while Match.Success do
+    begin
+      Result := Result + [Match.value];
+      Match := Match.NextMatch;
+    end;
+end;
+
+class function TStrTool.GetRegExFirstMatch(const aStr: string; aRegEx: string): string;
+var
+  Matches: TArray<string>;
+begin
+  Result := '';
+
+  Matches := GetRegExMatch(aStr, aRegEx);
+  if Length(Matches) > 0 then
+    Result := Matches[0];
+end;
 
 class function TStrTool.ExtractValue(const aKeyValue: string): string;
 begin

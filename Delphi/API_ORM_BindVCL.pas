@@ -102,7 +102,9 @@ begin
       Component := FForm.Components[i];
       PropName := GetPropNameByComponent(Component, aPrefix);
 
-      if PropName <> '' then
+      if (PropName <> '') and
+         aEntity.IsPropExists(PropName)
+      then
         begin
           RemoveBind(Component);
           AddBindItem(Component, aEntity, PropName);

@@ -101,6 +101,7 @@ type
       aReferEntityClass: TEntityClass; aReferFieldName: string = ''; aRelType: TRelType = rtUnknown);
     class procedure AddPimaryKeyField(var aPrimaryKey: TPrimaryKey; aFieldName: string;
       aFieldType: TFieldType);
+    function IsPropExists(const aPropName: string): Boolean;
     procedure Delete;
     procedure Revert;
     procedure Store;
@@ -157,6 +158,18 @@ uses
   System.SysUtils,
   System.TypInfo,
   System.Variants;
+
+function TEntityAbstract.IsPropExists(const aPropName: string): Boolean;
+var
+  PropInfo: PPropInfo;
+begin
+  PropInfo := GetPropInfo(Self, aPropName);
+
+  if PropInfo <> nil then
+    Result := True
+  else
+    Result := False;
+end;
 
 procedure TEntityAbstractList<T>.Refresh;
 begin
@@ -677,12 +690,7 @@ var
   PropInfo: PPropInfo;
 begin
   aPropName := GetPropNameByFieldName(aFieldName);
-  PropInfo := GetPropInfo(Self, aPropName);
-
-  if PropInfo <> nil then
-    Result := True
-  else
-    Result := False;
+  Result := IsPropExists(aPropName);
 end;
 
 function TEntityAbstract.GetUpdateSQLString: string;
