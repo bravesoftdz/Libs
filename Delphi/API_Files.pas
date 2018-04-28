@@ -2,6 +2,9 @@ unit API_Files;
 
 interface
 
+uses
+  System.Classes;
+
 type
   TFileInfo = record
   public
@@ -17,6 +20,7 @@ type
   TFilesEngine = class
   public
     class function GetFileInfoArr(const aPath: string): TArray<TFileInfo>;
+    class function GetFileStream(const aPath: string): TFileStream;
     class function GetTextFromFile(const aPath: string): string;
     class procedure Move(aSourceFullPath, aDestFullPath: string; aForceDir: Boolean = True);
     class procedure SaveTextToFile(const aPath, aText: string);
@@ -25,10 +29,14 @@ type
 implementation
 
 uses
-  System.Classes,
   System.IOUtils,
   System.SysUtils,
   System.Types;
+
+class function TFilesEngine.GetFileStream(const aPath: string): TFileStream;
+begin
+  Result := TFile.OpenRead(aPath);
+end;
 
 class procedure TFilesEngine.Move(aSourceFullPath, aDestFullPath: string; aForceDir: Boolean = True);
 var
