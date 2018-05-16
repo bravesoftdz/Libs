@@ -21,6 +21,7 @@ type
   public
     class function GetFileInfoArr(const aPath: string): TArray<TFileInfo>;
     class function GetFileStream(const aPath: string): TFileStream;
+    class function GetMIMEType(const aPath: string): string;
     class function GetTextFromFile(const aPath: string): string;
     class procedure Move(aSourceFullPath, aDestFullPath: string; aForceDir: Boolean = True);
     class procedure SaveTextToFile(const aPath, aText: string);
@@ -32,6 +33,29 @@ uses
   System.IOUtils,
   System.SysUtils,
   System.Types;
+
+class function TFilesEngine.GetMIMEType(const aPath: string): string;
+var
+  Ext: string;
+begin
+  Result := '';
+
+  Ext := UpperCase(ExtractFileExt(aPath));
+
+  if (Ext = '.JPG') or
+     (Ext = '.JPEG')
+  then
+    Result := 'image/jpeg'
+  else
+  if (Ext = '.PNG') then
+    Result := 'image/png'
+  else
+  if (Ext = '.BMP') then
+    Result := 'image/bmp'
+  else
+  if (Ext = '.GIF') then
+    Result := 'image/gif';
+end;
 
 class function TFilesEngine.GetFileStream(const aPath: string): TFileStream;
 begin

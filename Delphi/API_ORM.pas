@@ -41,7 +41,6 @@ type
     Value: Variant;
   end;
 
-  TObjProc = procedure of object;
   TEachJoinEntProp = procedure(aJoinEntity: TEntityAbstract; aEntityClass: TEntityClass;
    aEntityPropName, aFieldName, aReferFieldName: string) of object;
 
@@ -155,6 +154,7 @@ type
 implementation
 
 uses
+  API_Types,
   System.SysUtils,
   System.TypInfo,
   System.Variants;
@@ -331,25 +331,13 @@ begin
 end;
 
 procedure TEntityAbstract.ExecProcArr(aProcArr: TArray<TMethod>);
-var
-  Proc: TObjProc;
-  Method: TMethod;
 begin
-  for Method in aProcArr do
-    begin
-      Proc := TObjProc(Method);
-      Proc;
-    end;
+  TMethodEngine.ExecProcArr(aProcArr);
 end;
 
 procedure TEntityAbstract.AddProcToArr(var aProcArr: TArray<TMethod>; aCode, aData: Pointer);
-var
-  Method: TMethod;
 begin
-  Method.Code := aCode;
-  Method.Data := aData;
-
-  aProcArr := aProcArr + [Method];
+  TMethodEngine.AddProcToArr(aProcArr, aCode, aData);
 end;
 
 function TEntityAbstract.GetInstanceValue(aFieldName: string): Variant;
@@ -590,6 +578,9 @@ begin
       Result := 1
     else
       Result := 0;
+
+  if PropInfo^.PropType^.Name = 'TArray<System.Byte>' then
+    Result := StringOf(Result);
 end;
 
 function TEntityAbstract.GetNormInstanceValue(aInstance: TInstance): Variant;
@@ -605,6 +596,9 @@ begin
      VarIsNull(Result)
   then
     Result := 0;
+
+  if aInstance.FieldType = ftBlob then
+    Result := StringOf(Result);
 end;
 
 procedure TEntityAbstract.Revert;
@@ -704,8 +698,8 @@ begin
   SetPart := '';
   for Instance in FInstanceArr do
     begin
-      if CheckPropExist(Instance.FieldName, PropName) and
-         (GetNormInstanceValue(Instance) <> GetNormPropValue(PropName))
+      if (CheckPropExist(Instance.FieldName, PropName) and
+         (GetNormInstanceValue(Instance) <> GetNormPropValue(PropName)))
       then
         begin
           if i > 0 then
@@ -865,7 +859,11 @@ begin
     begin
       Instance.FieldName := UpperCase(aQuery.Fields[i].FullName);
       Instance.FieldType := aQuery.Fields[i].DataType;
-      Instance.Value := aQuery.Fields[i].Value;
+
+      if Instance.FieldType = ftString then
+        Instance.Value := aQuery.Fields[i].AsWideString
+      else
+        Instance.Value := aQuery.Fields[i].Value;
 
       Result := Result + [Instance];
     end;
@@ -985,8 +983,9 @@ begin
         if aValue = '' then
           aParam.Clear
         else
-          aParam.AsString := aValue;
-      end
+          aParam.AsWideString := aValue;
+      end;
+    ftBlob: aParam.AsBlob := aValue;
   else
     aParam.AsString := aValue;
   end;
