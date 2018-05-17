@@ -6,7 +6,8 @@ uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs,
   Vcl.ExtCtrls,
-  API_MVC;
+  API_MVC,
+  API_Types;
 
 type
   TViewVCLBase = class(TForm, IViewAbstract)
@@ -21,7 +22,7 @@ type
     procedure FormFree(Sender: TObject; var Action: TCloseAction);
   protected
     function AssignPicFromFile(aImage: TImage; const aPath: string): Boolean;
-    function AssignPicFromStream(aImage: TImage; aPictureStream: TStream; const aMIMEType: string): Boolean;
+    function AssignPicFromStream(aImage: TImage; var aMIMEType: TMIMEType; aPictureStream: TStream; aDefType: Boolean = False): Boolean;
     /// <summary>
     /// Override this procedure for assign FControllerClass in the main Application View(Form).
     /// </summary>
@@ -57,63 +58,83 @@ uses
   Vcl.Imaging.jpeg,
   Vcl.Imaging.pngimage;
 
-function TViewVCLBase.AssignPicFromStream(aImage: TImage; aPictureStream: TStream; const aMIMEType: string): Boolean;
+function TViewVCLBase.AssignPicFromStream(aImage: TImage; var aMIMEType: TMIMEType; aPictureStream: TStream; aDefType: Boolean = False): Boolean;
 var
   JPEGPicture: TJPEGImage;
   PNGPicture: TPNGImage;
 begin
-  Result := True;
-  try
-    //If JPG
-    if (aMIMEType = 'image/jpeg') or
-       (aMIMEType = 'image/jpg')
-    then
-      begin
-        JPEGPicture := TJPEGImage.Create;
+  Result := False;
+  if aDefType then
+    aMIMEType := mtUnknown;
+
+  if aDefType or
+     (aMIMEType = mtJPEG)
+  then
+    begin
+      JPEGPicture := TJPEGImage.Create;
+      try
         try
           JPEGPicture.LoadFromStream(aPictureStream);
           JPEGPicture.DIBNeeded;
           aImage.Picture.Assign(JPEGPicture);
 
-          //lblCoverSize.Caption := Format('Size: %d x %d', [JPEGPicture.Width, JPEGPicture.Height]);
-          //lblCoverSize.Visible := True;
-        finally
-          JPEGPicture.Free;
+          aDefType := False;
+          aMIMEType := mtJPEG;
+          Result := True;
+        except
         end;
+      finally
+        JPEGPicture.Free;
       end;
-    // If PNG
-    if aMIMEType = 'image/png' then
-      begin
-        PNGPicture := TPNGImage.Create;
+    end;
+
+  if aDefType or
+     (aMIMEType = mtPNG)
+  then
+    begin
+      PNGPicture := TPNGImage.Create;
+      try
         try
           PNGPicture.LoadFromStream(aPictureStream);
           aImage.Picture.Assign(PNGPicture);
-        finally
-          PNGPicture.Free;
+
+          aDefType := False;
+          aMIMEType := mtPNG;
+          Result := True;
+        except
         end;
+      finally
+        PNGPicture.Free;
       end;
-    //If BMP
-    if aMIMEType = 'image/bmp' then
-      begin
+    end;
+
+  if aDefType or
+     (aMIMEType = mtBMP)
+  then
+    begin
+      try
         aPictureStream.Seek(0, soFromBeginning);
         aImage.Picture.Bitmap.LoadFromStream(aPictureStream);
+
+        aDefType := False;
+        aMIMEType := mtBMP;
+        Result := True;
+      except
       end;
-  except
-    Result := False;
-  end;
+    end;
 end;
 
 function TViewVCLBase.AssignPicFromFile(aImage: TImage; const aPath: string): Boolean;
 var
   FileStream: TFileStream;
-  MIMEType: string;
+  MIMEType: TMIMEType;
 begin
-  FileStream := TFilesEngine.GetFileStream(aPath);
+  FileStream := TFilesEngine.CreateFileStream(aPath);
   try
     MIMEType := TFilesEngine.GetMIMEType(aPath);
 
-    if MIMEType <> '' then
-      Result := AssignPicFromStream(aImage, FileStream, MIMEType);
+    if MIMEType <> mtUnknown then
+      Result := AssignPicFromStream(aImage, MIMEType, FileStream);
   finally
     FileStream.Free;
   end;

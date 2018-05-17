@@ -3,6 +3,7 @@ unit API_Files;
 interface
 
 uses
+  API_Types,
   System.Classes;
 
 type
@@ -19,9 +20,9 @@ type
 
   TFilesEngine = class
   public
+    class function CreateFileStream(const aPath: string): TFileStream;
     class function GetFileInfoArr(const aPath: string): TArray<TFileInfo>;
-    class function GetFileStream(const aPath: string): TFileStream;
-    class function GetMIMEType(const aPath: string): string;
+    class function GetMIMEType(const aPath: string): TMIMEType;
     class function GetTextFromFile(const aPath: string): string;
     class procedure Move(aSourceFullPath, aDestFullPath: string; aForceDir: Boolean = True);
     class procedure SaveTextToFile(const aPath, aText: string);
@@ -34,30 +35,30 @@ uses
   System.SysUtils,
   System.Types;
 
-class function TFilesEngine.GetMIMEType(const aPath: string): string;
+class function TFilesEngine.GetMIMEType(const aPath: string): TMIMEType;
 var
   Ext: string;
 begin
-  Result := '';
+  Result := mtUnknown;
 
   Ext := UpperCase(ExtractFileExt(aPath));
 
   if (Ext = '.JPG') or
      (Ext = '.JPEG')
   then
-    Result := 'image/jpeg'
+    Result := mtJPEG
   else
   if (Ext = '.PNG') then
-    Result := 'image/png'
+    Result := mtPNG
   else
   if (Ext = '.BMP') then
-    Result := 'image/bmp'
+    Result := mtPNG
   else
   if (Ext = '.GIF') then
-    Result := 'image/gif';
+    Result := mtGIF;
 end;
 
-class function TFilesEngine.GetFileStream(const aPath: string): TFileStream;
+class function TFilesEngine.CreateFileStream(const aPath: string): TFileStream;
 begin
   Result := TFile.OpenRead(aPath);
 end;

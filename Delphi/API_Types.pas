@@ -3,6 +3,8 @@ unit API_Types;
 interface
 
 type
+  TMIMEType = (mtUnknown, mtBMP, mtJPEG, mtPNG, mtGIF);
+
   TObjProc = procedure of object;
 
   TMethodEngine = class
@@ -11,7 +13,34 @@ type
     class procedure ExecProcArr(aProcArr: TArray<TMethod>);
   end;
 
+  function MIMETypeToStr(const aMIMEType: TMIMEType): string;
+  function StrToMIMEType(const aStr: string): TMIMEType;
+
 implementation
+
+function StrToMIMEType(const aStr: string): TMIMEType;
+begin
+  Result := mtUnknown;
+
+  if aStr = 'image/jpg' then
+    Result := mtJPEG
+  else
+  if aStr = 'image/jpeg' then
+    Result := mtJPEG
+  else
+  if aStr = 'image/png' then
+    Result := mtPNG;
+end;
+
+function MIMETypeToStr(const aMIMEType: TMIMEType): string;
+begin
+  Result := '';
+
+  case aMIMEType of
+    mtJPEG: Result := 'image/jpg';
+    mtPNG: Result := 'image/png';
+  end;
+end;
 
 class procedure TMethodEngine.ExecProcArr(aProcArr: TArray<TMethod>);
 var

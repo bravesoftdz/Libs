@@ -578,9 +578,6 @@ begin
       Result := 1
     else
       Result := 0;
-
-  if PropInfo^.PropType^.Name = 'TArray<System.Byte>' then
-    Result := StringOf(Result);
 end;
 
 function TEntityAbstract.GetNormInstanceValue(aInstance: TInstance): Variant;
@@ -596,9 +593,6 @@ begin
      VarIsNull(Result)
   then
     Result := 0;
-
-  if aInstance.FieldType = ftBlob then
-    Result := StringOf(Result);
 end;
 
 procedure TEntityAbstract.Revert;
@@ -860,8 +854,8 @@ begin
       Instance.FieldName := UpperCase(aQuery.Fields[i].FullName);
       Instance.FieldType := aQuery.Fields[i].DataType;
 
-      if Instance.FieldType = ftString then
-        Instance.Value := aQuery.Fields[i].AsWideString
+      if Instance.FieldType = ftBlob then
+        Instance.Value := StringOf(aQuery.Fields[i].Value)
       else
         Instance.Value := aQuery.Fields[i].Value;
 
