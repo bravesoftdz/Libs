@@ -2,6 +2,9 @@ unit API_Types;
 
 interface
 
+uses
+  System.Classes;
+
 type
   TMIMEType = (mtUnknown, mtBMP, mtJPEG, mtPNG, mtGIF);
 
@@ -13,10 +16,39 @@ type
     class procedure ExecProcArr(aProcArr: TArray<TMethod>);
   end;
 
+  TStreamEngine = class
+  public
+    class function CreateStreamFromByteString(const aByteString: string): TStream;
+    class function GetByteString(aStream: TStream): string;
+  end;
+
   function MIMETypeToStr(const aMIMEType: TMIMEType): string;
   function StrToMIMEType(const aStr: string): TMIMEType;
 
 implementation
+
+uses
+  System.SysUtils;
+
+class function TStreamEngine.CreateStreamFromByteString(const aByteString: string): TStream;
+var
+  Buffer: TBytes;
+begin
+  Buffer := BytesOf(aByteString);
+
+  Result := TMemoryStream.Create;
+  Result.Write(Buffer, 0, Length(Buffer));
+  Result.Position := 0;
+end;
+
+class function TStreamEngine.GetByteString(aStream: TStream): string;
+var
+  Buffer: TBytes;
+begin
+  SetLength(Buffer, aStream.Size);
+  aStream.Read(Buffer, 0, aStream.Size);
+  Result := StringOf(Buffer);
+end;
 
 function StrToMIMEType(const aStr: string): TMIMEType;
 begin

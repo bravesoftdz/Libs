@@ -22,7 +22,7 @@ type
     procedure FormFree(Sender: TObject; var Action: TCloseAction);
   protected
     function AssignPicFromFile(aImage: TImage; const aPath: string): Boolean;
-    function AssignPicFromStream(aImage: TImage; var aMIMEType: TMIMEType; aPictureStream: TStream; aDefType: Boolean = False): Boolean;
+    function AssignPicFromStream(aImage: TImage; var aMIMEType: TMIMEType; const aPictureStream: TStream; aDefType: Boolean = False): Boolean;
     /// <summary>
     /// Override this procedure for assign FControllerClass in the main Application View(Form).
     /// </summary>
@@ -58,7 +58,7 @@ uses
   Vcl.Imaging.jpeg,
   Vcl.Imaging.pngimage;
 
-function TViewVCLBase.AssignPicFromStream(aImage: TImage; var aMIMEType: TMIMEType; aPictureStream: TStream; aDefType: Boolean = False): Boolean;
+function TViewVCLBase.AssignPicFromStream(aImage: TImage; var aMIMEType: TMIMEType; const aPictureStream: TStream; aDefType: Boolean = False): Boolean;
 var
   JPEGPicture: TJPEGImage;
   PNGPicture: TPNGImage;
@@ -74,6 +74,7 @@ begin
       JPEGPicture := TJPEGImage.Create;
       try
         try
+          aPictureStream.Position := 0;
           JPEGPicture.LoadFromStream(aPictureStream);
           JPEGPicture.DIBNeeded;
           aImage.Picture.Assign(JPEGPicture);
@@ -95,6 +96,7 @@ begin
       PNGPicture := TPNGImage.Create;
       try
         try
+          aPictureStream.Position := 0;
           PNGPicture.LoadFromStream(aPictureStream);
           aImage.Picture.Assign(PNGPicture);
 
