@@ -854,7 +854,9 @@ begin
       Instance.FieldName := UpperCase(aQuery.Fields[i].FullName);
       Instance.FieldType := aQuery.Fields[i].DataType;
 
-      if Instance.FieldType = ftBlob then
+      if (Instance.FieldType = ftBlob) and
+         not aQuery.Fields[i].IsNull
+      then
         Instance.Value := StringOf(aQuery.Fields[i].Value)
       else
         Instance.Value := aQuery.Fields[i].Value;
