@@ -21,6 +21,7 @@ type
     FBindItemArr: TArray<TBindItem>;
     FForm: TForm;
     function GetEntity(aControl: TComponent): TEntityAbstract;
+    function GetEntityIndexed(aControl: TComponent; aIndex: Integer): TEntityAbstract;
     function GetItemIndex(aControl: TComponent): Integer;
     function GetPropNameByComponent(aComponent: TComponent; aPrefix: string): string;
     procedure PropControlChange(Sender: TObject);
@@ -31,6 +32,7 @@ type
     procedure RemoveBind(aControl: TComponent);
     constructor Create(aForm: TForm);
     property Entity[aControl: TComponent]: TEntityAbstract read GetEntity;
+    property EntityIndexed[aControl: TComponent; aIndex: Integer]: TEntityAbstract read GetEntityIndexed;
   end;
 
 implementation
@@ -38,6 +40,19 @@ implementation
 uses
   Vcl.ExtCtrls,
   Vcl.StdCtrls;
+
+function TORMBind.GetEntityIndexed(aControl: TComponent; aIndex: Integer): TEntityAbstract;
+var
+  BindItem: TBindItem;
+begin
+  Result := nil;
+
+  for BindItem in FBindItemArr do
+    if (BindItem.Control = aControl) and
+       (BindItem.Index = aIndex)
+    then
+      Exit(BindItem.Entity);
+end;
 
 function TORMBind.GetItemIndex(aControl: TComponent): Integer;
 var
@@ -163,14 +178,8 @@ begin
 end;
 
 function TORMBind.GetEntity(aControl: TComponent): TEntityAbstract;
-var
-  BindItem: TBindItem;
 begin
-  Result := nil;
-
-  for BindItem in FBindItemArr do
-    if BindItem.Control = aControl then
-      Exit(BindItem.Entity);
+  Result := GetEntityIndexed(aControl, 0);
 end;
 
 end.
