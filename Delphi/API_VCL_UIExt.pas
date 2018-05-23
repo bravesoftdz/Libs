@@ -29,6 +29,8 @@ begin
         Exit(VirtualNode);
 
       Result := DoFindNode<T>(VirtualNode, aObject);
+      if Result <> nil then
+        Break;
     end;
 end;
 
