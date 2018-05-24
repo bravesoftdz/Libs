@@ -14,6 +14,7 @@ type
   public
     class procedure AddProcToArr(var aProcArr: TArray<TMethod>; aCode, aData: Pointer);
     class procedure ExecProcArr(aProcArr: TArray<TMethod>);
+    class procedure RemoveProcFromArr(var aProcArr: TArray<TMethod>; aCode, aData: Pointer);
   end;
 
   TStreamEngine = class
@@ -29,6 +30,20 @@ implementation
 
 uses
   System.SysUtils;
+
+class procedure TMethodEngine.RemoveProcFromArr(var aProcArr: TArray<TMethod>; aCode, aData: Pointer);
+var
+  i: Integer;
+  Method: TMethod;
+begin
+  for i := 0 to Length(aProcArr) - 1 do
+    if (aProcArr[i].Code = aCode) and
+       (aProcArr[i].Data = aData)
+    then
+      begin
+        Delete(aProcArr, i, 1);
+      end;
+end;
 
 class function TStreamEngine.CreateStreamFromByteString(const aByteString: string): TStream;
 var

@@ -232,7 +232,7 @@ procedure TEntityAbstract.FreeJoinEntity(aJoinEntity: TEntityAbstract; aEntityCl
   aEntityPropName, aFieldName, aReferFieldName: string);
 begin
   if Assigned(aJoinEntity) then
-    aJoinEntity.Free;
+    FreeAndNil(aJoinEntity);
 end;
 
 procedure TEntityAbstract.CreateJoinEntity(aJoinEntity: TEntityAbstract; aEntityClass: TEntityClass;
@@ -420,9 +420,13 @@ end;
 destructor TEntityAbstractList<T>.Destroy;
 var
   Entity: T;
+  i: Integer;
 begin
-  for Entity in FRecycleBin do
-    Entity.Free;
+  for i := 0 to Length(FRecycleBin) - 1 do
+    begin
+      Entity := FRecycleBin[i];
+      FreeAndNil(Entity);
+    end;
 
   inherited;
 end;
