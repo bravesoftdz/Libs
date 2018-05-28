@@ -32,6 +32,7 @@ type
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    property CloseMessage: string read GetCloseMessage;
     property OnViewMessage: TViewMessageProc read FOnViewMessage write FOnViewMessage;
   end;
 
@@ -144,7 +145,7 @@ end;
 
 function TViewVCLBase.GetCloseMessage: string;
 begin
-  Result := Self.Name + 'Closed';
+  Result := 'On' + Self.Name + 'Closed';
 end;
 
 destructor TControllerVCLBase.Destroy;
@@ -168,6 +169,7 @@ end;
 procedure TViewVCLBase.FormFree(Sender: TObject; var Action: TCloseAction);
 begin
   Action := caFree;
+  SendMessage(CloseMessage);
 end;
 
 function TVCLSupport.CreateView<T>(aInstantShow: Boolean = False): T;
